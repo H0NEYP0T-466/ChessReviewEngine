@@ -194,7 +194,7 @@ sample_games/
 
 ### Backend Settings (`backend/app/config.py`)
 ```python
-STOCKFISH_PATH = "/usr/games/stockfish"
+STOCKFISH_PATH = find_stockfish_path()  # Auto-detects based on platform
 ENGINE_DEPTH = 18
 ENGINE_THREADS = 4
 ENGINE_HASH_MB = 256
@@ -225,6 +225,17 @@ MAX_PGN_LENGTH = 20000
 - CPU: Configurable threads (default 4)
 - Memory: 256MB hash + ~100MB overhead
 - Network: WebSocket for streaming (~1KB per move)
+
+## Recent Fixes
+
+### Cross-Platform Stockfish Path Detection (Fixed)
+- ✅ **Issue**: Application stuck at "analyzing game with stockfish at 0%" on Windows due to hardcoded Linux path
+- ✅ **Solution**: Implemented automatic path detection with platform-specific fallbacks
+- ✅ **Features**:
+  - Checks system PATH first
+  - Falls back to common installation locations (Windows, macOS, Linux)
+  - Supports environment variable override via `STOCKFISH_PATH`
+  - Provides helpful error messages with installation instructions
 
 ## Known Limitations
 

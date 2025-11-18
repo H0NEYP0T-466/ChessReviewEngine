@@ -67,10 +67,17 @@ A full-stack chess game review application identical in UX and analytical depth 
    pip install -r requirements.txt
    ```
 
-4. **Configure Stockfish path** (if not in default location):
-   Create `backend/.env` file:
+4. **Configure Stockfish path** (optional):
+   The application automatically detects Stockfish from:
+   - System PATH
+   - Platform-specific default locations:
+     - Windows: `C:\Program Files\Stockfish\`, `%LOCALAPPDATA%\Stockfish\`
+     - macOS: `/usr/local/bin/`, `/opt/homebrew/bin/`
+     - Linux: `/usr/games/`, `/usr/bin/`, `/usr/local/bin/`
+   
+   To override the automatic detection, create `backend/.env` file:
    ```env
-   STOCKFISH_PATH=/path/to/stockfish
+   STOCKFISH_PATH=/custom/path/to/stockfish
    ENGINE_DEPTH=18
    ENGINE_THREADS=4
    ```
@@ -214,8 +221,12 @@ All backend operations are logged with `logger.info`:
 
 ## Troubleshooting
 
-**Backend won't start**:
-- Check Stockfish is installed: `stockfish` or `which stockfish`
+**Backend won't start / "Stockfish not found" error**:
+- Verify Stockfish is installed:
+  - Windows: Check if stockfish.exe exists in your installation folder
+  - Linux/macOS: Run `which stockfish` or `stockfish` in terminal
+- If Stockfish is installed in a custom location, set `STOCKFISH_PATH` in `backend/.env`
+- Check the error message for installation instructions specific to your platform
 - Verify Python dependencies: `pip list`
 - Check logs for specific errors
 
