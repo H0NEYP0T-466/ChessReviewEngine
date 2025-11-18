@@ -1,0 +1,8 @@
+fastapi==0.115.6
+uvicorn[standard]==0.34.0
+python-chess==1.999
+stockfish==3.28.0
+pydantic==2.10.6
+pydantic-settings==2.7.1
+websockets==14.1
+loguru==0.7.3
