@@ -12,10 +12,10 @@ class StockfishEngine:
     
     def __init__(
         self,
-        path: Optional[str] = None,
-        depth: Optional[int] = None,
-        threads: Optional[int] = None,
-        hash_mb: Optional[int] = None
+        path: Optional[str] = r"C:\Users\Muhammad Fezan\Downloads\stockfish-windows-x86-64-avx2\stockfish\stockfish-windows-x86-64-avx2.exe",
+        depth: Optional[int] = 10,
+        threads: Optional[int] = 4,
+        hash_mb: Optional[int] = 256,
     ):
         """
         Initialize Stockfish engine.
@@ -31,8 +31,10 @@ class StockfishEngine:
         self.threads = threads or settings.ENGINE_THREADS
         self.hash_mb = hash_mb or settings.ENGINE_HASH_MB
         
-        logger.info(f"Initializing Stockfish: path={self.path}, depth={self.depth}, "
-                   f"threads={self.threads}, hash={self.hash_mb}MB")
+        logger.info(
+            f"Initializing Stockfish: path={self.path}, depth={self.depth}, "
+            f"threads={self.threads}, hash={self.hash_mb}MB"
+        )
         
         try:
             self.engine = Stockfish(
@@ -50,7 +52,7 @@ class StockfishEngine:
                 f"Stockfish executable not found at path: {self.path}\n"
                 f"Please install Stockfish or set the correct path via STOCKFISH_PATH environment variable.\n"
                 f"Installation instructions:\n"
-                f"  - Windows: Download from https://stockfishchess.org/download/ and extract to a known location\n"
+                f"  - Windows: Download from stockfishchess.org and extract to a known location\n"
                 f"  - Linux: sudo apt-get install stockfish\n"
                 f"  - macOS: brew install stockfish"
             )
@@ -71,8 +73,7 @@ class StockfishEngine:
         """
         try:
             self.engine.set_fen_position(fen)
-            eval_result = self.engine.get_evaluation()
-            return eval_result
+            return self.engine.get_evaluation()
         except Exception as e:
             logger.error(f"Evaluation failed for FEN {fen}: {str(e)}")
             return {"type": "cp", "value": 0}
@@ -85,12 +86,11 @@ class StockfishEngine:
             fen: FEN position string
             
         Returns:
-            Best move in UCI format (e.g., 'e2e4') or None
+            Best move or None
         """
         try:
             self.engine.set_fen_position(fen)
-            best_move = self.engine.get_best_move()
-            return best_move
+            return self.engine.get_best_move()
         except Exception as e:
             logger.error(f"Get best move failed for FEN {fen}: {str(e)}")
             return None
@@ -107,43 +107,24 @@ class StockfishEngine:
 
 def convert_mate_to_cp(eval_dict: Dict[str, Any]) -> int:
     """
-    Convert mate evaluation to centipawn equivalent.
-    
-    Args:
-        eval_dict: Evaluation dict from engine
-        
-    Returns:
-        Centipawn value
+    Convert mate eval to centipawn-like score.
     """
     if eval_dict["type"] == "mate":
         mate_in = eval_dict["value"]
-        # Positive mate_in means white mates, negative means black mates
-        # Convert to very large cp value
         if mate_in > 0:
             return 10000 - (mate_in * 10)
         else:
             return -10000 - (mate_in * 10)
-    else:
-        return eval_dict["value"]
+    return eval_dict["value"]
 
 
 def get_cp_evaluation(engine: StockfishEngine, fen: str, perspective_white: bool = True) -> int:
     """
-    Get centipawn evaluation from perspective.
-    
-    Args:
-        engine: Stockfish engine instance
-        fen: FEN position
-        perspective_white: If True, positive values favor white
-        
-    Returns:
-        Centipawn evaluation
+    Get centipawn evaluation from chosen perspective.
     """
     eval_dict = engine.get_evaluation(fen)
     cp = convert_mate_to_cp(eval_dict)
     
-    # Stockfish returns values from white's perspective
-    # If we need black's perspective, negate
     if not perspective_white:
         cp = -cp
     

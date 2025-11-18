@@ -91,20 +91,10 @@ function AppContent() {
 
   return (
     <div className="min-h-screen bg-dark-bg text-dark-text">
-      {/* Header */}
-      <header className="bg-dark-surface border-b border-dark-border py-6 px-4">
-        <div className="max-w-7xl mx-auto">
-          <h1 className="text-4xl font-bold text-center">
-            🍯 <span className="text-green-400">HoneyPotEngine</span>
-          </h1>
-          <p className="text-center text-gray-400 mt-2">
-            Chess Game Review System - Powered by Stockfish
-          </p>
-        </div>
-      </header>
+    
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 py-8">
+      <main className="max-w-4xl mx-auto px-4 py-8">
         {!gameAnalysis ? (
           // Upload View
           <div className="space-y-6">
