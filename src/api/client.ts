@@ -8,6 +8,8 @@ import type {
   GameAnalysisResult,
   HealthResponse,
   StreamingUpdate,
+  CompletionMessage,
+  WebSocketMessage,
 } from '../types/analysis';
 
 const API_BASE_URL = 'http://localhost:8000';
@@ -63,7 +65,8 @@ export async function checkHealth(): Promise<HealthResponse> {
  */
 export function createWebSocket(
   taskId: string,
-  onMessage: (update: StreamingUpdate) => void,
+  onUpdate: (update: StreamingUpdate) => void,
+  onComplete: (completion: CompletionMessage) => void,
   onError?: (error: Event) => void,
   onClose?: () => void
 ): WebSocket {
@@ -71,8 +74,15 @@ export function createWebSocket(
 
   ws.onmessage = (event) => {
     try {
-      const update = JSON.parse(event.data) as StreamingUpdate;
-      onMessage(update);
+      const message = JSON.parse(event.data) as WebSocketMessage;
+      
+      // Check if this is a completion message
+      if ('status' in message && message.status === 'complete') {
+        onComplete(message as CompletionMessage);
+      } else {
+        // Regular streaming update
+        onUpdate(message as StreamingUpdate);
+      }
     } catch (error) {
       console.error('Failed to parse WebSocket message:', error);
     }

@@ -7,7 +7,7 @@ from ..engine.stockfish import StockfishEngine, get_cp_evaluation
 from ..engine.classification import classify_move, calculate_accuracy, compute_win_probability
 from ..models.schemas import (
     MoveAnalysis, EngineEvaluation, PlayerSummary, GameSummary,
-    GameAnalysisResult, StreamingUpdate, MoveArrow
+    GameAnalysisResult, StreamingUpdate, MoveArrow, CompletionMessage
 )
 from ..utils.logging import logger
 
@@ -217,6 +217,16 @@ async def analyze_game(
     analysis_storage[task_id] = result
     
     logger.info(f"Analysis complete: task_id={task_id}")
+    
+    # Send completion message via WebSocket
+    if ws_manager:
+        completion = CompletionMessage(
+            task_id=task_id,
+            status="complete",
+            total_moves=len(moves)
+        )
+        await ws_manager.broadcast(task_id, completion.model_dump())
+        logger.info(f"Sent completion message for task_id={task_id}")
     
     return result
 
