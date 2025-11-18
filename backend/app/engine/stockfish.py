@@ -44,9 +44,20 @@ class StockfishEngine:
                 }
             )
             logger.info("Stockfish engine initialized successfully")
+        except FileNotFoundError as e:
+            logger.error(f"Stockfish executable not found at: {self.path}")
+            error_msg = (
+                f"Stockfish executable not found at path: {self.path}\n"
+                f"Please install Stockfish or set the correct path via STOCKFISH_PATH environment variable.\n"
+                f"Installation instructions:\n"
+                f"  - Windows: Download from https://stockfishchess.org/download/ and extract to a known location\n"
+                f"  - Linux: sudo apt-get install stockfish\n"
+                f"  - macOS: brew install stockfish"
+            )
+            raise RuntimeError(error_msg) from e
         except Exception as e:
             logger.error(f"Failed to initialize Stockfish: {str(e)}")
-            raise RuntimeError(f"Could not initialize Stockfish engine: {str(e)}")
+            raise RuntimeError(f"Could not initialize Stockfish engine: {str(e)}") from e
     
     def get_evaluation(self, fen: str) -> Dict[str, Any]:
         """
