@@ -57,8 +57,8 @@ export function PGNUpload({ onAnalyze, isLoading = false }: PGNUploadProps) {
             id="pgn-input"
             value={pgn}
             onChange={(e) => setPgn(e.target.value)}
-            className="w-full h-64 px-4 py-3 bg-dark-surface border border-dark-border rounded-lg 
-                     text-dark-text font-mono text-sm focus:ring-2 focus:ring-green-500 
+            className="w-full h-64 px-4 py-3 bg-zinc-800 border border-zinc-700 rounded-lg 
+                     text-zinc-100 font-mono text-sm focus:ring-2 focus:ring-green-500 
                      focus:border-transparent resize-none"
             placeholder="Paste your PGN here..."
             disabled={isLoading}

@@ -13,7 +13,7 @@ export function LoadingOverlay({
 }: LoadingOverlayProps) {
   return (
     <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
-      <div className="bg-dark-surface p-8 rounded-lg shadow-xl max-w-md w-full mx-4">
+      <div className="bg-zinc-800 p-8 rounded-lg shadow-xl max-w-md w-full mx-4">
         <div className="text-center space-y-4">
           {/* Spinner */}
           <div className="flex justify-center">

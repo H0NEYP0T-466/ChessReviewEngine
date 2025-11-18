@@ -15,6 +15,12 @@ interface AnalysisBoardProps {
   onMoveIndexChange: (index: number) => void;
 }
 
+type Arrow = {
+  startSquare: string;
+  endSquare: string;
+  color: string;
+};
+
 export function AnalysisBoard({
   moves,
   currentMoveIndex,
@@ -22,7 +28,7 @@ export function AnalysisBoard({
 }: AnalysisBoardProps) {
   const [game] = useState(new Chess());
   const [position, setPosition] = useState(game.fen());
-  const [arrows, setArrows] = useState<Array<[string, string]>>([]);
+  const [arrows, setArrows] = useState<Arrow[]>([]);
 
   // Update board position when move index changes
   useEffect(() => {
@@ -44,10 +50,14 @@ export function AnalysisBoard({
       // Set arrows for mistakes/blunders
       const currentMove = moves[currentMoveIndex];
       if (currentMove.arrows && currentMove.arrows.length > 0) {
-        const arrowPairs = currentMove.arrows.map(
-          (arrow: MoveArrow) => [arrow.from, arrow.to] as [string, string]
+        const arrowList: Arrow[] = currentMove.arrows.map(
+          (arrow: MoveArrow) => ({
+            startSquare: arrow.from,
+            endSquare: arrow.to,
+            color: 'rgb(239, 68, 68)'
+          })
         );
-        setArrows(arrowPairs);
+        setArrows(arrowList);
       } else {
         setArrows([]);
       }
@@ -90,18 +100,19 @@ export function AnalysisBoard({
         
         <div className="w-full max-w-2xl">
           <Chessboard
-            position={position}
-            boardWidth={600}
-            customArrows={arrows}
-            customArrowColor="rgb(239, 68, 68)"
-            arePiecesDraggable={false}
+            options={{
+              id: 'analysis-board',
+              position: position,
+              arrows: arrows,
+              allowDragging: false,
+            }}
           />
         </div>
       </div>
 
       {/* Move Info */}
       {currentMove && (
-        <div className="bg-dark-surface rounded-lg p-4 space-y-3">
+        <div className="bg-zinc-800 rounded-lg p-4 space-y-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <span className="text-2xl font-mono font-bold">

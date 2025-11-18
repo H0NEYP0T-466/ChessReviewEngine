@@ -24,8 +24,8 @@ export function MoveList({ moves, currentMoveIndex, onMoveSelect }: MoveListProp
   }
 
   return (
-    <div className="bg-dark-surface rounded-lg p-4 max-h-96 overflow-y-auto">
-      <h3 className="text-lg font-semibold mb-4 sticky top-0 bg-dark-surface pb-2">
+    <div className="bg-zinc-800 rounded-lg p-4 max-h-96 overflow-y-auto">
+      <h3 className="text-lg font-semibold mb-4 sticky top-0 bg-zinc-800 pb-2">
         Moves
       </h3>
       
@@ -42,8 +42,8 @@ export function MoveList({ moves, currentMoveIndex, onMoveSelect }: MoveListProp
               <button
                 onClick={() => onMoveSelect(white.index)}
                 className={`flex-1 flex items-center justify-between px-2 py-1.5 rounded 
-                  hover:bg-dark-border transition-colors ${
-                    currentMoveIndex === white.index ? 'bg-dark-border ring-2 ring-green-500' : ''
+                  hover:bg-zinc-700 transition-colors ${
+                    currentMoveIndex === white.index ? 'bg-zinc-700 ring-2 ring-green-500' : ''
                   }`}
               >
                 <span className="font-mono">{white.san}</span>
@@ -56,8 +56,8 @@ export function MoveList({ moves, currentMoveIndex, onMoveSelect }: MoveListProp
               <button
                 onClick={() => onMoveSelect(black.index)}
                 className={`flex-1 flex items-center justify-between px-2 py-1.5 rounded 
-                  hover:bg-dark-border transition-colors ${
-                    currentMoveIndex === black.index ? 'bg-dark-border ring-2 ring-green-500' : ''
+                  hover:bg-zinc-700 transition-colors ${
+                    currentMoveIndex === black.index ? 'bg-zinc-700 ring-2 ring-green-500' : ''
                   }`}
               >
                 <span className="font-mono">{black.san}</span>

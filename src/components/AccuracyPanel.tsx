@@ -18,7 +18,7 @@ export function AccuracyPanel({
   blackPlayer = 'Black',
 }: AccuracyPanelProps) {
   return (
-    <div className="bg-dark-surface rounded-lg p-4 space-y-4">
+    <div className="bg-zinc-800 rounded-lg p-4 space-y-4">
       <h3 className="text-lg font-semibold mb-4">Player Accuracy</h3>
       
       {/* White Player */}
