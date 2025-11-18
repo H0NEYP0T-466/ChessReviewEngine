@@ -65,10 +65,14 @@ async def analyze_game(
             # Get FEN before move
             fen_before = board.fen()
             
+            # Convert move to SAN before playing it
+            san = board.san(move)
+            uci = move.uci()
+            
             # Get best move and evaluation before playing
             best_move_uci = engine.get_best_move(fen_before)
             if best_move_uci is None:
-                best_move_uci = move.uci()  # Fallback
+                best_move_uci = uci  # Fallback
             
             best_eval_cp = get_cp_evaluation(engine, fen_before, perspective_white=(side == "white"))
             
@@ -111,8 +115,8 @@ async def analyze_game(
             move_analysis = MoveAnalysis(
                 index=i,
                 side=side,
-                san=board.san(move),
-                uci=move.uci(),
+                san=san,
+                uci=uci,
                 fen_before=fen_before,
                 fen_after=fen_after,
                 engine=EngineEvaluation(
@@ -140,7 +144,7 @@ async def analyze_game(
             
             # Log move analysis
             logger.info(
-                f"task_id={task_id} move_index={i} side={side} san={board.san(move)} "
+                f"task_id={task_id} move_index={i} side={side} san={san} "
                 f"best={best_move_uci} played_eval={played_eval_cp} best_eval={best_eval_cp} "
                 f"diff={eval_diff_cp} classification={classification}"
             )
