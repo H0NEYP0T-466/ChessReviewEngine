@@ -95,6 +95,13 @@ class StreamingUpdate(BaseModel):
     progress: float
 
 
+class CompletionMessage(BaseModel):
+    """Message sent when analysis is complete."""
+    task_id: str
+    status: Literal["complete"]
+    total_moves: int
+
+
 class HealthResponse(BaseModel):
     """Health check response."""
     status: Literal["healthy", "unhealthy"]

@@ -11,8 +11,8 @@ import { AnalysisBoard } from './components/AnalysisBoard';
 import { MoveList } from './components/MoveList';
 import { AccuracyPanel } from './components/AccuracyPanel';
 import { LoadingOverlay } from './components/LoadingOverlay';
-import { startAnalysis, createWebSocket } from './api/client';
-import type { GameAnalysisResult, StreamingUpdate } from './types/analysis';
+import { startAnalysis, createWebSocket, getGameAnalysis } from './api/client';
+import type { GameAnalysisResult, StreamingUpdate, CompletionMessage } from './types/analysis';
 
 const queryClient = new QueryClient();
 
@@ -46,53 +46,40 @@ function AppContent() {
       // Connect to WebSocket for live updates
       const websocket = createWebSocket(
         response.task_id,
+        // Handle streaming updates
         (update: StreamingUpdate) => {
           // Update progress
           setAnalysisProgress(update.progress);
-          
-          // Build up moves incrementally
-          setGameAnalysis((prev) => {
-            if (!prev) {
-              return {
-                task_id: response.task_id,
-                headers: {},
-                moves: [],
-                summary: {
-                  white: { accuracy: 0, blunders: 0, mistakes: 0, misses: 0, brilliant: 0, best: 0, excellent: 0, great: 0, good: 0 },
-                  black: { accuracy: 0, blunders: 0, mistakes: 0, misses: 0, brilliant: 0, best: 0, excellent: 0, great: 0, good: 0 },
-                },
-              };
-            }
-            return prev;
-          });
         },
+        // Handle completion message
+        async (completion: CompletionMessage) => {
+          console.log(`Analysis complete (${completion.total_moves} moves), fetching full results...`);
+          try {
+            // Fetch complete analysis
+            const completeAnalysis = await getGameAnalysis(response.task_id);
+            setGameAnalysis(completeAnalysis);
+            setCurrentMoveIndex(0);
+            toast.success('Analysis complete!');
+          } catch (error) {
+            console.error('Failed to fetch complete analysis:', error);
+            toast.error('Failed to load complete analysis results');
+          } finally {
+            setIsAnalyzing(false);
+          }
+        },
+        // Handle WebSocket error
         (error) => {
           console.error('WebSocket error:', error);
           toast.error('Connection error during analysis');
-        },
-        () => {
-          // Analysis complete
           setIsAnalyzing(false);
-          toast.success('Analysis complete!');
+        },
+        // Handle WebSocket close
+        () => {
+          console.log('WebSocket connection closed');
         }
       );
       
       setWs(websocket);
-      
-      // Poll for complete results
-      // In a real implementation, you'd fetch the complete result when WebSocket closes
-      setTimeout(async () => {
-        try {
-          // Fetch complete analysis
-          const completeAnalysis = await fetch(`http://localhost:8000/api/game/${response.task_id}`).then(r => r.json());
-          setGameAnalysis(completeAnalysis);
-          setCurrentMoveIndex(0);
-        } catch (error) {
-          console.error('Failed to fetch complete analysis:', error);
-        } finally {
-          setIsAnalyzing(false);
-        }
-      }, response.total_moves * 500); // Rough estimate based on moves
       
     } catch (error) {
       setIsAnalyzing(false);

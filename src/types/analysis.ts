@@ -91,6 +91,14 @@ export interface StreamingUpdate {
   progress: number;
 }
 
+export interface CompletionMessage {
+  task_id: string;
+  status: 'complete';
+  total_moves: number;
+}
+
+export type WebSocketMessage = StreamingUpdate | CompletionMessage;
+
 export interface HealthResponse {
   status: 'healthy' | 'unhealthy';
   engine_available: boolean;
