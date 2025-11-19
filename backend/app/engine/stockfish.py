@@ -12,7 +12,7 @@ class StockfishEngine:
     
     def __init__(
         self,
-        path: Optional[str] = None,
+        path: Optional[str] = r"C:\Users\Muhammad Fezan\Downloads\stockfish-windows-x86-64-avx2\stockfish\stockfish-windows-x86-64-avx2.exe",
         depth: Optional[int] = 5,
         threads: Optional[int] = 4,
         hash_mb: Optional[int] = 256,
