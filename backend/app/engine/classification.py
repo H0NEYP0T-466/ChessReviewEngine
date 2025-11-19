@@ -201,11 +201,15 @@ def _is_brilliant_candidate(
     """
     Detect if a move is brilliant.
     
-    According to refined spec, a brilliant move:
-    - Must be the engine's top move (checked by caller)
-    - Must involve a sacrifice: material value decreases after the move
-    - Gains ≥ +2.00 (200cp) advantage
-    - Often a tactical knockout or surprising genius move
+    A brilliant move requires ALL of the following:
+    1. Must be the engine's top move (checked by caller)
+    2. Must involve a material sacrifice (giving up piece value)
+    3. Must create significant advantage (≥ +2.00 / 200cp)
+    4. Must show significant improvement from previous position
+    
+    Optional enhancement (not implemented - would require multi-PV analysis):
+    - Check if second-best move is much worse (uniqueness test)
+    - This would require running engine with MultiPV=2, which adds overhead
     
     Args:
         move: The played move (must be the best move - verified by caller)
