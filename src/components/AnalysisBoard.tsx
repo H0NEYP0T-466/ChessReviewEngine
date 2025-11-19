@@ -2,11 +2,12 @@
  * Main chess board component with navigation and analysis display.
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Chessboard } from 'react-chessboard';
 import { Chess } from 'chess.js';
 import { EvalBar } from './EvalBar';
 import { ClassificationBadge } from './ClassificationBadge';
+import { MoveClassificationOverlay } from './MoveClassificationOverlay';
 import type { MoveAnalysis, MoveArrow } from '../types/analysis';
 
 interface AnalysisBoardProps {
@@ -69,17 +70,25 @@ export function AnalysisBoard({
 
   const currentMove = currentMoveIndex >= 0 ? moves[currentMoveIndex] : null;
 
-  const handlePrevious = () => {
+  // Extract destination square from UCI notation (e.g., "e2e4" -> "e4")
+  const getDestinationSquare = (uci: string): string => {
+    if (uci.length >= 4) {
+      return uci.substring(2, 4);
+    }
+    return '';
+  };
+
+  const handlePrevious = useCallback(() => {
     if (currentMoveIndex > 0) {
       onMoveIndexChange(currentMoveIndex - 1);
     }
-  };
+  }, [currentMoveIndex, onMoveIndexChange]);
 
-  const handleNext = () => {
+  const handleNext = useCallback(() => {
     if (currentMoveIndex < moves.length - 1) {
       onMoveIndexChange(currentMoveIndex + 1);
     }
-  };
+  }, [currentMoveIndex, moves.length, onMoveIndexChange]);
 
   const handleFirst = () => {
     onMoveIndexChange(0);
@@ -88,6 +97,27 @@ export function AnalysisBoard({
   const handleLast = () => {
     onMoveIndexChange(moves.length - 1);
   };
+
+  // Keyboard navigation
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      switch (event.key) {
+        case 'ArrowLeft':
+          handlePrevious();
+          break;
+        case 'ArrowRight':
+          handleNext();
+          break;
+        default:
+          break;
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [handlePrevious, handleNext]);
 
   return (
     <div className="space-y-4">
@@ -98,7 +128,7 @@ export function AnalysisBoard({
           height="600px"
         />
         
-        <div className="w-full max-w-2xl">
+        <div className="w-full max-w-2xl relative">
           <Chessboard
             options={{
               id: 'analysis-board',
@@ -107,6 +137,14 @@ export function AnalysisBoard({
               allowDragging: false,
             }}
           />
+          {/* Classification overlay on destination square */}
+          {currentMove && (
+            <MoveClassificationOverlay
+              classification={currentMove.classification}
+              targetSquare={getDestinationSquare(currentMove.uci)}
+              boardOrientation="white"
+            />
+          )}
         </div>
       </div>
 
