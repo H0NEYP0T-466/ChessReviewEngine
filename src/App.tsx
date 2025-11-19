@@ -94,7 +94,7 @@ function AppContent() {
     
 
       {/* Main Content */}
-      <main className="max-w-4xl mx-auto px-4 py-8">
+      <main className="max-w-5xl mx-auto px-4 py-3">
         {!gameAnalysis ? (
           // Upload View
           <div className="space-y-6">
@@ -133,19 +133,20 @@ function AppContent() {
                 </div>
               </div>
 
-              {/* Accuracy Panel */}
-              <AccuracyPanel
-                whiteSummary={gameAnalysis.summary.white}
-                blackSummary={gameAnalysis.summary.black}
-                whitePlayer={gameAnalysis.headers.White}
-                blackPlayer={gameAnalysis.headers.Black}
-              />
+              
+              
 
               {/* Move List */}
               <MoveList
                 moves={gameAnalysis.moves}
                 currentMoveIndex={currentMoveIndex}
                 onMoveSelect={setCurrentMoveIndex}
+              />
+              <AccuracyPanel
+                whiteSummary={gameAnalysis.summary.white}
+                blackSummary={gameAnalysis.summary.black}
+                whitePlayer={gameAnalysis.headers.White}
+                blackPlayer={gameAnalysis.headers.Black}
               />
 
               {/* New Analysis Button */}
