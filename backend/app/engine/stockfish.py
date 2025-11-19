@@ -39,7 +39,7 @@ class StockfishEngine:
         try:
             self.engine = Stockfish(
                 path=self.path,
-                depth=depth,
+                depth=self.depth,
                 parameters={
                     "Threads": self.threads,
                     "Hash": self.hash_mb,
