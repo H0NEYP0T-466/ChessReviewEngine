@@ -60,12 +60,12 @@ export function MoveClassificationOverlay({
       style={{
         top: position.top,
         left: position.left,
-        width: '12.5%', // 1/8 of board width
-        height: '12.5%', // 1/8 of board height
+        width: '18%', // 1/8 of board width
+        height: '8%', // 1/8 of board height
       }}
     >
       <div
-        className="absolute top-0 right-0 rounded-lg shadow-lg flex items-center justify-center"
+        className="absolute bottom-6 right-0 "
         style={{
           width: '70%',
           height: '70%',
