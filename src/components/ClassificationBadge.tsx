@@ -11,15 +11,15 @@ interface ClassificationBadgeProps {
 }
 
 const classificationColors: Record<MoveClassification, string> = {
-  theory: 'bg-gray-600 text-gray-100',
-  best: 'bg-green-600 text-white',
-  excellent: 'bg-green-500 text-white',
-  great: 'bg-lime-500 text-white',
-  good: 'bg-blue-500 text-white',
-  brilliant: 'bg-purple-600 text-white',
-  inaccuracy: 'bg-orange-600 text-white',
-  mistake: 'bg-orange-500 text-white',
-  blunder: 'bg-red-600 text-white',
+  theory: 'text-white',
+  best: 'text-white',
+  excellent: 'text-white',
+  great: 'text-white',
+  good: 'text-white',
+  brilliant: 'text-white',
+  inaccuracy: 'text-white',
+  mistake: 'text-white',
+  blunder: 'text-white',
 };
 
 const classificationLabels: Record<MoveClassification, string> = {
@@ -59,6 +59,7 @@ export function ClassificationBadge({
   return (
     <span
       className={`inline-flex items-center font-semibold rounded ${colorClass} ${sizeClass}`}
+      style={{ backgroundColor: style.backgroundColor }}
     >
       <img 
         src={style.imageUrl} 

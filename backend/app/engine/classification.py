@@ -12,6 +12,97 @@ MoveClassification = Literal[
 ]
 
 
+def classify_move_by_winrate(
+    best_eval_cp: int,
+    played_eval_cp: int,
+    played_move: chess.Move,
+    best_move: str,
+    is_opening: bool = False,
+    board: chess.Board = None,
+    player_turn_white: bool = True
+) -> MoveClassification:
+    """
+    Classify move based on win probability loss (more accurate than centipawn loss).
+    
+    Args:
+        best_eval_cp: Evaluation if best move was played (from player's perspective)
+        played_eval_cp: Evaluation after played move (from player's perspective)
+        played_move: The move that was played
+        best_move: Best move in UCI format
+        is_opening: Whether move is in opening theory
+        board: Current board position (optional, for brilliant detection)
+        player_turn_white: True if it's white's turn, False if black's
+        
+    Returns:
+        Move classification
+    """
+    # Check for checkmate first - winning checkmate is always "best"
+    if board:
+        board_after = board.copy()
+        board_after.push(played_move)
+        if board_after.is_checkmate():
+            logger.info(f"Checkmate detected: {played_move} - classifying as 'best'")
+            return "best"
+    
+    # Compare played move with best move properly (UCI format)
+    played_move_uci = played_move.uci()
+    is_best_move = (played_move_uci == best_move)
+    
+    # Calculate win% for best move and played move (both from player's perspective)
+    best_win_pct = compute_win_probability(best_eval_cp) * 100
+    played_win_pct = compute_win_probability(played_eval_cp) * 100
+    
+    # Win% loss (always positive, higher = worse)
+    win_loss_pct = best_win_pct - played_win_pct
+    
+    # Check if position is "garbage time" (already completely winning/losing)
+    # Winning = eval > 700cp from player's perspective
+    is_garbage_time = abs(best_eval_cp) > 700
+    
+    # Opening theory moves - only mark as theory if it's a very good move
+    if is_opening and win_loss_pct <= 2.0:  # Less than 2% win probability loss
+        return "theory"
+    
+    # Check for brilliant move - requires being the best move AND meeting criteria
+    # Skip in garbage time
+    if board and is_best_move and not is_garbage_time:
+        if _is_brilliant_candidate(
+            played_move, board, best_eval_cp, played_eval_cp, 0
+        ):
+            logger.info(f"Brilliant move detected: {played_move} with eval swing")
+            return "brilliant"
+    
+    # In garbage time, only allow "best" or "excellent"
+    if is_garbage_time:
+        if win_loss_pct <= 2.0:
+            return "best"
+        else:
+            return "excellent"
+    
+    # Standard win% based classification
+    # Best: 0-1% win loss
+    # Excellent: 1-2% win loss  
+    # Great: 2-5% win loss
+    # Good: 5-10% win loss
+    # Inaccuracy: 10-20% win loss
+    # Mistake: 20-30% win loss
+    # Blunder: >30% win loss
+    if win_loss_pct <= 1.0:
+        return "best"
+    elif win_loss_pct <= 2.0:
+        return "excellent"
+    elif win_loss_pct <= 5.0:
+        return "great"
+    elif win_loss_pct <= 10.0:
+        return "good"
+    elif win_loss_pct <= 20.0:
+        return "inaccuracy"
+    elif win_loss_pct <= 30.0:
+        return "mistake"
+    else:
+        return "blunder"
+
+
 def classify_move(
     diff_cp: int,
     played_move: chess.Move,
@@ -233,13 +324,17 @@ def compute_win_probability(cp: int) -> float:
     """
     Convert centipawn evaluation to win probability.
     
-    Uses logistic function: P = 1 / (1 + 10^(-cp/400))
+    Uses improved formula: Win% = 50 + 50 * (2 / (1 + exp(-0.004 * cp)) - 1)
+    This matches Chess.com/Lichess formula for better accuracy.
     
     Args:
-        cp: Centipawn evaluation
+        cp: Centipawn evaluation (from player's perspective, positive = advantage)
         
     Returns:
         Win probability (0.0 to 1.0)
     """
     import math
-    return round(1 / (1 + math.pow(10, -cp / 400)), 3)
+    # Clamp extreme values to avoid overflow
+    clamped_cp = max(-10000, min(10000, cp))
+    win_pct = 50 + 50 * (2 / (1 + math.exp(-0.004 * clamped_cp)) - 1)
+    return round(win_pct / 100, 3)

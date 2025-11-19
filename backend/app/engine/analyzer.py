@@ -4,7 +4,7 @@ import chess
 import asyncio
 from typing import Optional
 from ..engine.stockfish import StockfishEngine, get_cp_evaluation
-from ..engine.classification import classify_move, calculate_accuracy, compute_win_probability
+from ..engine.classification import classify_move, classify_move_by_winrate, calculate_accuracy, compute_win_probability
 from ..models.schemas import (
     MoveAnalysis, EngineEvaluation, PlayerSummary, GameSummary,
     GameAnalysisResult, StreamingUpdate, MoveArrow, CompletionMessage
@@ -74,44 +74,57 @@ async def analyze_game(
             if best_move_uci is None:
                 best_move_uci = uci  # Fallback
             
+            # CRITICAL FIX: Get evaluations from the CURRENT PLAYER's perspective
+            # For White: positive eval = advantage, negative = disadvantage
+            # For Black: negative eval = advantage, positive = disadvantage
+            # We normalize so POSITIVE = advantage for current player
+            
             # Get evaluation from WHITE's perspective (for eval bar consistency)
             best_eval_cp_white = get_cp_evaluation(engine, fen_before, perspective_white=True)
             
-            # Also get from player's perspective for classification
-            best_eval_cp = get_cp_evaluation(engine, fen_before, perspective_white=(side == "white"))
+            # Get evaluation from CURRENT PLAYER's perspective (for classification)
+            # If it's White's turn, use White's perspective (positive = good)
+            # If it's Black's turn, FLIP the sign (so negative eval becomes positive advantage)
+            is_white_turn = (side == "white")
+            best_eval_raw = get_cp_evaluation(engine, fen_before, perspective_white=True)
+            best_eval_cp = best_eval_raw if is_white_turn else -best_eval_raw
             
             # Play the actual move
             board.push(move)
             fen_after = board.fen()
             
-            # Get evaluation after the played move from WHITE's perspective
+            # Get evaluation after the played move from WHITE's perspective (for eval bar)
             played_eval_cp_white = get_cp_evaluation(engine, fen_after, perspective_white=True)
             
-            # Also get from player's perspective for classification
-            played_eval_cp = get_cp_evaluation(engine, fen_after, perspective_white=(side == "white"))
+            # Get evaluation from CURRENT PLAYER's perspective (for classification)
+            played_eval_raw = get_cp_evaluation(engine, fen_after, perspective_white=True)
+            played_eval_cp = played_eval_raw if is_white_turn else -played_eval_raw
             
-            # Calculate difference (from the player's perspective, negative is worse)
-            # We want absolute loss
-            eval_diff_cp = abs(best_eval_cp - played_eval_cp)
+            # Now both best_eval_cp and played_eval_cp are from the player's perspective
+            # Higher value = better for the player (regardless of color)
+            # Calculate the loss: if played_eval < best_eval, that's a mistake
+            eval_diff_cp = max(0, best_eval_cp - played_eval_cp)  # Loss in centipawns
             
-            # Classify the move
+            # Classify the move using win% based classification
             is_opening = i < 15  # Simple heuristic: first 15 moves are "opening"
-            classification = classify_move(
-                diff_cp=eval_diff_cp,
+            classification = classify_move_by_winrate(
+                best_eval_cp=best_eval_cp,
+                played_eval_cp=played_eval_cp,
                 played_move=move,
                 best_move=best_move_uci,
                 is_opening=is_opening,
                 board=chess.Board(fen_before),  # Board before move for brilliant detection
-                eval_before=best_eval_cp,
-                eval_after=played_eval_cp
+                player_turn_white=is_white_turn
             )
             
             # Calculate move accuracy
             move_accuracy = calculate_accuracy([eval_diff_cp])
             
-            # Create arrows for inaccuracies/mistakes/blunders
+            # FIXED: Always create arrow for best move (not just for mistakes)
+            # This helps users see what the engine recommended
             arrows = []
-            if classification in ["inaccuracy", "mistake", "blunder"] and best_move_uci:
+            if best_move_uci and len(best_move_uci) >= 4:
+                # Always show the best move arrow
                 arrows.append(MoveArrow(
                     from_square=best_move_uci[:2],
                     to_square=best_move_uci[2:4],
