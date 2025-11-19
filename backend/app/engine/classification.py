@@ -8,7 +8,7 @@ from ..utils.logging import logger
 
 MoveClassification = Literal[
     "theory", "best", "excellent", "great", "good",
-    "brilliant", "mistake", "miss", "blunder"
+    "brilliant", "inaccuracy", "mistake", "blunder"
 ]
 
 
@@ -24,8 +24,24 @@ def classify_move(
     """
     Classify a move based on centipawn loss and context.
     
+    Classification thresholds (diff_cp is centipawn LOSS vs best move):
+    - Brilliant: Special case - best move creating ≥200cp advantage
+    - Best: 0-20cp loss (includes excellent moves in spec)
+    - Good: 20-50cp loss  
+    - Inaccuracy: 50-100cp loss (was called "great" or "mistake" range in old spec)
+    - Mistake: 100cp+ loss
+    - Blunder: 100cp+ loss (same as mistake for now, can be separated by context)
+    
+    Note: The spec mentions "Good: +0.20 to +0.50" meaning moves that improve 
+    position by 0.2-0.5 vs baseline. In practice, we classify based on how much 
+    WORSE than the best move, so:
+    - 0-20cp worse than best = Best/Excellent
+    - 20-50cp worse = Good
+    - 50-100cp worse = Inaccuracy  
+    - 100cp+ worse = Mistake/Blunder
+    
     Args:
-        diff_cp: Absolute centipawn difference between best and played move
+        diff_cp: Absolute centipawn difference between best and played move (positive = loss)
         played_move: The move that was played
         best_move: Best move in UCI format
         is_opening: Whether move is in opening theory
@@ -36,31 +52,36 @@ def classify_move(
     Returns:
         Move classification
     """
-    # Opening theory moves
-    if is_opening and diff_cp <= settings.THRESHOLD_GOOD:
+    # Opening theory moves - only mark as theory if it's a very good move
+    if is_opening and diff_cp <= settings.THRESHOLD_BEST:
         return "theory"
     
-    # Check for brilliant move (sacrifice leading to advantage)
-    if board and _is_brilliant_candidate(
-        played_move, board, eval_before, eval_after, diff_cp
-    ):
-        logger.info(f"Brilliant move detected: {played_move} with eval swing")
-        return "brilliant"
+    # Check for brilliant move - requires being essentially the best move
+    # AND creating a huge advantage
+    if board and diff_cp <= 10:  # Must be within 10cp of best
+        if _is_brilliant_candidate(
+            played_move, board, eval_before, eval_after, diff_cp
+        ):
+            logger.info(f"Brilliant move detected: {played_move} with eval swing")
+            return "brilliant"
     
-    # Standard classifications based on centipawn loss
-    if diff_cp <= settings.THRESHOLD_BEST:
+    # Standard classifications based on centipawn loss vs best move
+    # According to refined spec:
+    # 0-10cp = best, 10-20cp = excellent, 20-50cp = great, 50-100cp = good
+    # 100-200cp = inaccuracy, 200-300cp = mistake, 300cp+ = blunder
+    if diff_cp <= settings.THRESHOLD_BEST:  # 0-10cp loss
         return "best"
-    elif diff_cp <= settings.THRESHOLD_EXCELLENT:
+    elif diff_cp <= settings.THRESHOLD_EXCELLENT:  # 10-20cp loss
         return "excellent"
-    elif diff_cp <= settings.THRESHOLD_GREAT:
+    elif diff_cp <= settings.THRESHOLD_GREAT:  # 20-50cp loss
         return "great"
-    elif diff_cp <= settings.THRESHOLD_GOOD:
+    elif diff_cp <= settings.THRESHOLD_GOOD:  # 50-100cp loss
         return "good"
-    elif diff_cp < settings.THRESHOLD_MISS:
+    elif diff_cp <= settings.THRESHOLD_INACCURACY:  # 100-200cp loss
+        return "inaccuracy"
+    elif diff_cp <= settings.THRESHOLD_MISTAKE:  # 200-300cp loss
         return "mistake"
-    elif diff_cp < settings.THRESHOLD_BLUNDER:
-        return "miss"
-    else:
+    else:  # >= 300cp loss
         return "blunder"
 
 
@@ -72,43 +93,42 @@ def _is_brilliant_candidate(
     diff_cp: int
 ) -> bool:
     """
-    Detect if a move is a brilliant sacrifice.
+    Detect if a move is brilliant.
     
-    A brilliant move is typically:
-    - A sacrifice (giving up material)
-    - Initially looks worse but leads to long-term advantage
-    - Not immediately obvious
+    According to spec, a brilliant move:
+    - Gains ≥ +2.00 (200cp) advantage from an equal/close position
+    - Often a tactical knockout or surprising genius move
+    - Completely changes the game
     
     Args:
         move: The played move
         board: Board before the move
-        eval_before: Evaluation before move
-        eval_after: Evaluation after move
-        diff_cp: CP difference
+        eval_before: Best evaluation before move
+        eval_after: Evaluation after played move
+        diff_cp: CP difference between best and played (should be ~0 for brilliant)
         
     Returns:
         True if move appears brilliant
     """
-    # For now, simplified brilliant detection:
-    # - Move loses material (is a sacrifice)
-    # - But evaluation doesn't drop too much (still good despite material loss)
+    # Brilliant move must be essentially the best move (diff_cp very small)
+    if diff_cp > settings.THRESHOLD_BEST:
+        return False
     
-    # Check if it's a capture or not
+    # Check if the move creates a huge advantage (≥200cp) from close position
+    # eval_after is from the player's perspective after the move
+    # If position was close (eval_before small) and now there's huge advantage
+    if abs(eval_before) < 100:  # Position was relatively equal
+        if abs(eval_after) >= settings.THRESHOLD_BRILLIANT:  # Now huge advantage
+            logger.info(f"Brilliant candidate: eval_before={eval_before}, eval_after={eval_after}")
+            return True
+    
+    # Check for tactical brilliance: sacrifice that leads to advantage
     is_capture = board.is_capture(move)
-    
-    # Get piece values
     piece = board.piece_at(move.from_square)
     if piece is None:
         return False
     
     piece_value = _get_piece_value(piece.piece_type)
-    
-    # If it's a non-capture of a valuable piece in a good position
-    # and the move is still within reasonable bounds
-    if not is_capture and piece_value >= 3 and diff_cp <= settings.THRESHOLD_GREAT:
-        # Check if it creates threats (simplified: eval stays good)
-        if abs(eval_after) > 50:  # Position has some tension
-            return True
     
     # Check for actual sacrifices (captures where we lose material value)
     if is_capture:
@@ -116,9 +136,15 @@ def _is_brilliant_candidate(
         if captured_piece:
             captured_value = _get_piece_value(captured_piece.piece_type)
             if piece_value > captured_value + 1:  # Sacrificing more than gaining
-                # If eval stays reasonable despite sacrifice, could be brilliant
-                if diff_cp <= settings.THRESHOLD_EXCELLENT:
+                # If eval improves massively despite sacrifice, it's brilliant
+                if abs(eval_after) >= settings.THRESHOLD_BRILLIANT:
                     return True
+    
+    # Check for quiet moves that create huge threats
+    if not is_capture and piece_value >= 3:
+        # Quiet piece move that creates ≥200cp advantage
+        if abs(eval_after) >= settings.THRESHOLD_BRILLIANT:
+            return True
     
     return False
 

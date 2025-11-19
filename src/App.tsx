@@ -91,29 +91,47 @@ function AppContent() {
 
   return (
     <div className="min-h-screen bg-dark-bg text-dark-text">
-    
-
       {/* Main Content */}
-      <main className="max-w-5xl mx-auto px-4 py-3">
+      <main className="max-w-7xl mx-auto px-6 py-6">
         {!gameAnalysis ? (
           // Upload View
           <div className="space-y-6">
             <PGNUpload onAnalyze={handleAnalyze} isLoading={isAnalyzing} />
           </div>
         ) : (
-          // Analysis View
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Left column - Board */}
-            <div className="lg:col-span-2">
+          // Analysis View - Updated Layout
+          <div className="flex flex-col lg:flex-row gap-6">
+            {/* Left column - Board and Accuracy */}
+            <div className="flex-1 space-y-6">
               <AnalysisBoard
                 moves={gameAnalysis.moves}
                 currentMoveIndex={currentMoveIndex}
                 onMoveIndexChange={setCurrentMoveIndex}
               />
+              
+              {/* Accuracy Panel below board */}
+              <AccuracyPanel
+                whiteSummary={gameAnalysis.summary.white}
+                blackSummary={gameAnalysis.summary.black}
+                whitePlayer={gameAnalysis.headers.White}
+                blackPlayer={gameAnalysis.headers.Black}
+              />
+
+              {/* New Analysis Button */}
+              <button
+                onClick={() => {
+                  setGameAnalysis(null);
+                  setCurrentMoveIndex(0);
+                }}
+                className="w-full px-6 py-3 bg-gray-700 hover:bg-gray-600 
+                         text-white font-semibold rounded-lg transition-colors"
+              >
+                Analyze Another Game
+              </button>
             </div>
 
-            {/* Right column - Moves and Stats */}
-            <div className="space-y-6">
+            {/* Right column - Game Info and Move List */}
+            <div className="lg:w-80 space-y-6">
               {/* Game Info */}
               <div className="bg-dark-surface rounded-lg p-4">
                 <h3 className="text-lg font-semibold mb-2">Game Info</h3>
@@ -133,33 +151,12 @@ function AppContent() {
                 </div>
               </div>
 
-              
-              
-
-              {/* Move List */}
+              {/* Move List on the side */}
               <MoveList
                 moves={gameAnalysis.moves}
                 currentMoveIndex={currentMoveIndex}
                 onMoveSelect={setCurrentMoveIndex}
               />
-              <AccuracyPanel
-                whiteSummary={gameAnalysis.summary.white}
-                blackSummary={gameAnalysis.summary.black}
-                whitePlayer={gameAnalysis.headers.White}
-                blackPlayer={gameAnalysis.headers.Black}
-              />
-
-              {/* New Analysis Button */}
-              <button
-                onClick={() => {
-                  setGameAnalysis(null);
-                  setCurrentMoveIndex(0);
-                }}
-                className="w-full px-6 py-3 bg-gray-700 hover:bg-gray-600 
-                         text-white font-semibold rounded-lg transition-colors"
-              >
-                Analyze Another Game
-              </button>
             </div>
           </div>
         )}

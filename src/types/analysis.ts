@@ -9,8 +9,8 @@ export type MoveClassification =
   | 'great'
   | 'good'
   | 'brilliant'
+  | 'inaccuracy'
   | 'mistake'
-  | 'miss'
   | 'blunder';
 
 export type PlayerSide = 'white' | 'black';
@@ -47,7 +47,7 @@ export interface PlayerSummary {
   accuracy: number;
   blunders: number;
   mistakes: number;
-  misses: number;
+  inaccuracies: number;
   brilliant: number;
   best: number;
   excellent: number;

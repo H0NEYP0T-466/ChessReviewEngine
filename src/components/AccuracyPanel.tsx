@@ -45,6 +45,11 @@ export function AccuracyPanel({
               {whiteSummary.excellent} Excellent
             </span>
           )}
+          {whiteSummary.inaccuracies > 0 && (
+            <span className="bg-orange-600 px-2 py-1 rounded">
+              {whiteSummary.inaccuracies} Inaccuracies
+            </span>
+          )}
           {whiteSummary.mistakes > 0 && (
             <span className="bg-orange-500 px-2 py-1 rounded">
               {whiteSummary.mistakes} Mistakes
@@ -80,6 +85,11 @@ export function AccuracyPanel({
           {blackSummary.excellent > 0 && (
             <span className="bg-green-500 px-2 py-1 rounded">
               {blackSummary.excellent} Excellent
+            </span>
+          )}
+          {blackSummary.inaccuracies > 0 && (
+            <span className="bg-orange-600 px-2 py-1 rounded">
+              {blackSummary.inaccuracies} Inaccuracies
             </span>
           )}
           {blackSummary.mistakes > 0 && (

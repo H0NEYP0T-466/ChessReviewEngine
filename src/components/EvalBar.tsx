@@ -1,5 +1,8 @@
 /**
  * Evaluation bar component showing position evaluation.
+ * The evaluation is always from White's perspective:
+ * - Positive values = White is winning (more white at top)
+ * - Negative values = Black is winning (more black at bottom)
  */
 
 interface EvalBarProps {
@@ -12,6 +15,7 @@ export function EvalBar({ evalCp, height = '400px' }: EvalBarProps) {
   const clampedEval = Math.max(-1000, Math.min(1000, evalCp));
   
   // Convert to percentage (0% = black winning, 100% = white winning)
+  // The evaluation is ALWAYS from White's perspective, regardless of whose turn it is
   const whitePercent = ((clampedEval + 1000) / 2000) * 100;
 
   return (
