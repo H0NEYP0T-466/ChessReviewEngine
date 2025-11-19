@@ -69,16 +69,20 @@ class Settings(BaseSettings):
     # Classification thresholds (in centipawns)
     # Based on new specification (diff_cp is absolute loss compared to best move):
     # Brilliant: ≥ +2.00 (200cp improvement - special case)
-    # Excellent/Best: +1.00 to +2.00 (100-200cp improvement)
-    # Great: +0.50 to +1.00 (50-100cp improvement)
-    # Good: +0.20 to +0.50 (20-50cp improvement)
-    # Inaccuracy: -0.20 to -0.50 (20-50cp loss)
-    # Mistake: -0.50 to -1.00 (50-100cp loss)
-    # Blunder: ≤ -1.00 (≥100cp loss)
-    THRESHOLD_BEST: int = 20  # 0-20cp loss = best/excellent move
-    THRESHOLD_GOOD: int = 50  # 20-50cp loss = good/inaccuracy
-    THRESHOLD_MISTAKE: int = 100  # 50-100cp loss = mistake
-    THRESHOLD_BLUNDER: int = 100  # ≥100cp loss = blunder
+    # Best: 0-10cp loss (essentially the best move)
+    # Excellent: 10-20cp loss (very strong move)
+    # Great: 20-50cp loss (strong move)
+    # Good: 50-100cp loss (decent move)
+    # Inaccuracy: 100-200cp loss (slight mistake)
+    # Mistake: 200-300cp loss (serious mistake)
+    # Blunder: ≥300cp loss (game-losing mistake)
+    THRESHOLD_BEST: int = 10  # 0-10cp loss = best move
+    THRESHOLD_EXCELLENT: int = 20  # 10-20cp loss = excellent
+    THRESHOLD_GREAT: int = 50  # 20-50cp loss = great
+    THRESHOLD_GOOD: int = 100  # 50-100cp loss = good
+    THRESHOLD_INACCURACY: int = 200  # 100-200cp loss = inaccuracy
+    THRESHOLD_MISTAKE: int = 300  # 200-300cp loss = mistake
+    THRESHOLD_BLUNDER: int = 300  # ≥300cp loss = blunder
     THRESHOLD_BRILLIANT: int = 200  # Must be >= 200cp advantage for brilliant
     
     # Accuracy calculation

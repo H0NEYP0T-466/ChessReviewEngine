@@ -66,18 +66,23 @@ def classify_move(
             return "brilliant"
     
     # Standard classifications based on centipawn loss vs best move
-    if diff_cp <= settings.THRESHOLD_BEST:  # 0-20cp loss
+    # According to refined spec:
+    # 0-10cp = best, 10-20cp = excellent, 20-50cp = great, 50-100cp = good
+    # 100-200cp = inaccuracy, 200-300cp = mistake, 300cp+ = blunder
+    if diff_cp <= settings.THRESHOLD_BEST:  # 0-10cp loss
         return "best"
-    elif diff_cp <= settings.THRESHOLD_GOOD:  # 20-50cp loss
+    elif diff_cp <= settings.THRESHOLD_EXCELLENT:  # 10-20cp loss
+        return "excellent"
+    elif diff_cp <= settings.THRESHOLD_GREAT:  # 20-50cp loss
+        return "great"
+    elif diff_cp <= settings.THRESHOLD_GOOD:  # 50-100cp loss
         return "good"
-    elif diff_cp < settings.THRESHOLD_MISTAKE:  # 50-100cp loss
+    elif diff_cp <= settings.THRESHOLD_INACCURACY:  # 100-200cp loss
         return "inaccuracy"
-    else:  # >= 100cp loss
-        # Could separate mistake (100-200) from blunder (200+) here
-        if diff_cp >= 200:
-            return "blunder"
-        else:
-            return "mistake"
+    elif diff_cp <= settings.THRESHOLD_MISTAKE:  # 200-300cp loss
+        return "mistake"
+    else:  # >= 300cp loss
+        return "blunder"
 
 
 def _is_brilliant_candidate(
