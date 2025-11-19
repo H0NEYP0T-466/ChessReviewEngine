@@ -48,7 +48,7 @@ class MoveAnalysis(BaseModel):
     engine: EngineEvaluation
     classification: Literal[
         "theory", "best", "excellent", "great", "good",
-        "brilliant", "mistake", "miss", "blunder"
+        "brilliant", "inaccuracy", "mistake", "blunder"
     ]
     accuracy: float
     opening: bool
@@ -60,7 +60,7 @@ class PlayerSummary(BaseModel):
     accuracy: float
     blunders: int = 0
     mistakes: int = 0
-    misses: int = 0
+    inaccuracies: int = 0
     brilliant: int = 0
     best: int = 0
     excellent: int = 0

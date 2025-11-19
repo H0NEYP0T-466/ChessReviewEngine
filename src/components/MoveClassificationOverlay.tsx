@@ -65,17 +65,17 @@ export function MoveClassificationOverlay({
       }}
     >
       <div
-        className="absolute top-0 right-0 rounded-bl-lg shadow-lg flex items-center justify-center font-bold"
+        className="absolute top-0 right-0 rounded-lg shadow-lg flex items-center justify-center"
         style={{
-          backgroundColor: style.backgroundColor,
-          color: style.color,
-          width: '55%',
-          height: '55%',
-          fontSize: '1.2em',
-          lineHeight: '1',
+          width: '70%',
+          height: '70%',
         }}
       >
-        {style.icon}
+        <img 
+          src={style.imageUrl} 
+          alt={classification}
+          className="w-full h-full object-contain"
+        />
       </div>
     </div>
   );

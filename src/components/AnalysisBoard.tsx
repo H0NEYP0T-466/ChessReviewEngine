@@ -122,13 +122,13 @@ export function AnalysisBoard({
   return (
     <div className="space-y-4">
       {/* Board and Eval Bar */}
-      <div className="flex gap-4 items-center justify-center">
+      <div className="flex gap-4 items-start">
         <EvalBar 
           evalCp={currentMove?.engine.played_eval_cp ?? 0} 
-          height="600px"
+          height="500px"
         />
         
-        <div className="w-full max-w-2xl relative">
+        <div className="flex-1 max-w-[500px] relative">
           <Chessboard
             options={{
               id: 'analysis-board',
@@ -176,10 +176,6 @@ export function AnalysisBoard({
               </span>
             </div>
             <div>
-              <span className="text-gray-400">Best Move:</span>
-              <span className="ml-2 font-mono">{currentMove.engine.best_move}</span>
-            </div>
-            <div>
               <span className="text-gray-400">Win Probability:</span>
               <span className="ml-2">
                 {(currentMove.engine.win_probability * 100).toFixed(1)}%
@@ -190,6 +186,22 @@ export function AnalysisBoard({
               <span className="ml-2">{currentMove.engine.eval_diff_cp}</span>
             </div>
           </div>
+
+          {/* Show top engine move if current move is not best */}
+          {currentMove.engine.eval_diff_cp > 10 && currentMove.engine.best_move && (
+            <div className="mt-3 pt-3 border-t border-gray-700">
+              <div className="text-sm">
+                <span className="text-gray-400">Top Engine Move:</span>
+                <span className="ml-2 font-mono font-semibold text-green-400">
+                  {currentMove.engine.best_move}
+                </span>
+              </div>
+              <div className="text-xs text-gray-500 mt-1">
+                Best evaluation: {currentMove.engine.best_eval_cp > 0 ? '+' : ''}
+                {(currentMove.engine.best_eval_cp / 100).toFixed(2)}
+              </div>
+            </div>
+          )}
         </div>
       )}
 

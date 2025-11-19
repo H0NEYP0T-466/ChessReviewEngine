@@ -51,9 +51,9 @@ async def analyze_game(
     white_cpl: list[int] = []
     black_cpl: list[int] = []
     
-    white_stats = {"blunders": 0, "mistakes": 0, "misses": 0, "brilliant": 0,
+    white_stats = {"blunders": 0, "mistakes": 0, "inaccuracies": 0, "brilliant": 0,
                    "best": 0, "excellent": 0, "great": 0, "good": 0}
-    black_stats = {"blunders": 0, "mistakes": 0, "misses": 0, "brilliant": 0,
+    black_stats = {"blunders": 0, "mistakes": 0, "inaccuracies": 0, "brilliant": 0,
                    "best": 0, "excellent": 0, "great": 0, "good": 0}
     
     # Analyze each move
@@ -74,13 +74,20 @@ async def analyze_game(
             if best_move_uci is None:
                 best_move_uci = uci  # Fallback
             
+            # Get evaluation from WHITE's perspective (for eval bar consistency)
+            best_eval_cp_white = get_cp_evaluation(engine, fen_before, perspective_white=True)
+            
+            # Also get from player's perspective for classification
             best_eval_cp = get_cp_evaluation(engine, fen_before, perspective_white=(side == "white"))
             
             # Play the actual move
             board.push(move)
             fen_after = board.fen()
             
-            # Get evaluation after the played move
+            # Get evaluation after the played move from WHITE's perspective
+            played_eval_cp_white = get_cp_evaluation(engine, fen_after, perspective_white=True)
+            
+            # Also get from player's perspective for classification
             played_eval_cp = get_cp_evaluation(engine, fen_after, perspective_white=(side == "white"))
             
             # Calculate difference (from the player's perspective, negative is worse)
@@ -102,9 +109,9 @@ async def analyze_game(
             # Calculate move accuracy
             move_accuracy = calculate_accuracy([eval_diff_cp])
             
-            # Create arrows for mistakes/misses/blunders
+            # Create arrows for inaccuracies/mistakes/blunders
             arrows = []
-            if classification in ["mistake", "miss", "blunder"] and best_move_uci:
+            if classification in ["inaccuracy", "mistake", "blunder"] and best_move_uci:
                 arrows.append(MoveArrow(
                     from_square=best_move_uci[:2],
                     to_square=best_move_uci[2:4],
@@ -112,6 +119,8 @@ async def analyze_game(
                 ))
             
             # Create move analysis
+            # Use WHITE's perspective for played_eval_cp (for eval bar)
+            # But use player's perspective for best_eval_cp and win probability
             move_analysis = MoveAnalysis(
                 index=i,
                 side=side,
@@ -121,10 +130,10 @@ async def analyze_game(
                 fen_after=fen_after,
                 engine=EngineEvaluation(
                     best_move=best_move_uci,
-                    played_eval_cp=played_eval_cp,
-                    best_eval_cp=best_eval_cp,
+                    played_eval_cp=played_eval_cp_white,  # Always from White's perspective
+                    best_eval_cp=best_eval_cp,  # From player's perspective
                     eval_diff_cp=eval_diff_cp,
-                    win_probability=compute_win_probability(played_eval_cp)
+                    win_probability=compute_win_probability(played_eval_cp)  # From player's perspective
                 ),
                 classification=classification,
                 accuracy=move_accuracy,
@@ -185,7 +194,7 @@ async def analyze_game(
             accuracy=white_accuracy,
             blunders=white_stats.get("blunder", 0),
             mistakes=white_stats.get("mistake", 0),
-            misses=white_stats.get("miss", 0),
+            inaccuracies=white_stats.get("inaccuracy", 0),
             brilliant=white_stats.get("brilliant", 0),
             best=white_stats.get("best", 0),
             excellent=white_stats.get("excellent", 0),
@@ -196,7 +205,7 @@ async def analyze_game(
             accuracy=black_accuracy,
             blunders=black_stats.get("blunder", 0),
             mistakes=black_stats.get("mistake", 0),
-            misses=black_stats.get("miss", 0),
+            inaccuracies=black_stats.get("inaccuracy", 0),
             brilliant=black_stats.get("brilliant", 0),
             best=black_stats.get("best", 0),
             excellent=black_stats.get("excellent", 0),
