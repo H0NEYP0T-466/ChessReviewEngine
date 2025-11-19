@@ -61,7 +61,7 @@ class Settings(BaseSettings):
     
     # Engine settings
     STOCKFISH_PATH: str = find_stockfish_path()
-    ENGINE_DEPTH: int = 18
+    ENGINE_DEPTH: int = 10
     ENGINE_THREADS: int = 4
     ENGINE_HASH_MB: int = 256
     TIME_PER_MOVE_MS: int = 300

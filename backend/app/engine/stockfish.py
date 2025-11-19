@@ -13,7 +13,7 @@ class StockfishEngine:
     def __init__(
         self,
         path: Optional[str] = r"C:\Users\Muhammad Fezan\Downloads\stockfish-windows-x86-64-avx2\stockfish\stockfish-windows-x86-64-avx2.exe",
-        depth: Optional[int] = 10,
+        depth: Optional[int] = 5,
         threads: Optional[int] = 4,
         hash_mb: Optional[int] = 256,
     ):
@@ -27,7 +27,7 @@ class StockfishEngine:
             hash_mb: Hash table size in MB
         """
         self.path = path or settings.STOCKFISH_PATH
-        self.depth = depth or settings.ENGINE_DEPTH
+        self.depth = depth
         self.threads = threads or settings.ENGINE_THREADS
         self.hash_mb = hash_mb or settings.ENGINE_HASH_MB
         
