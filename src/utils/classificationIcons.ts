@@ -38,49 +38,49 @@ export const classificationStyles: Record<MoveClassification, ClassificationStyl
     icon: '✓',
     imageUrl: goodImg,
     color: '#ffffff',
-    backgroundColor: '#3b82f6', // blue-500
+    backgroundColor: '#96af8b', // Desaturated Green (standard)
   },
   great: {
     icon: '✓✓',
     imageUrl: greatImg,
     color: '#ffffff',
-    backgroundColor: '#84cc16', // lime-500
+    backgroundColor: '#5c8bb0', // Periwinkle Blue (standard)
   },
   best: {
     icon: '⭐',
     imageUrl: bestImg,
     color: '#ffffff',
-    backgroundColor: '#16a34a', // green-600
+    backgroundColor: '#81b64c', // Green (standard)
   },
   excellent: {
     icon: '⚡',
     imageUrl: excellentImg,
     color: '#ffffff',
-    backgroundColor: '#22c55e', // green-500
+    backgroundColor: '#96bc4b', // Light Green (standard)
   },
   brilliant: {
     icon: '‼',
     imageUrl: brilliantImg,
     color: '#ffffff',
-    backgroundColor: '#9333ea', // purple-600
+    backgroundColor: '#1baca6', // Teal/Cyan (standard)
   },
   inaccuracy: {
     icon: '?!',
     imageUrl: inaccuracyImg,
     color: '#ffffff',
-    backgroundColor: '#ea580c', // orange-600
+    backgroundColor: '#f0c15c', // Yellow (standard)
   },
   mistake: {
     icon: '?',
     imageUrl: mistakeImg,
     color: '#ffffff',
-    backgroundColor: '#f97316', // orange-500
+    backgroundColor: '#e6912c', // Orange (standard)
   },
   blunder: {
     icon: '??',
     imageUrl: blunderImg,
     color: '#ffffff',
-    backgroundColor: '#dc2626', // red-600
+    backgroundColor: '#ca3431', // Red (standard)
   },
 };
 

@@ -50,14 +50,22 @@ export function AnalysisBoard({
         const newPosition = game.fen();
         setPosition(newPosition);
         
-        // Set arrows for mistakes/blunders/inaccuracies
+        // Show arrows for best move (always displayed now)
         const currentMove = moves[currentMoveIndex];
         if (currentMove.arrows && currentMove.arrows.length > 0) {
+          // Use different colors based on move quality
+          // Green for best moves, Yellow for good moves, Red for mistakes/blunders
+          const arrowColor = currentMove.classification === 'best' || currentMove.classification === 'excellent'
+            ? 'rgba(129, 182, 76, 0.8)' // Green for good moves
+            : currentMove.classification === 'great' || currentMove.classification === 'good'
+            ? 'rgba(92, 139, 176, 0.8)' // Blue for decent moves  
+            : 'rgba(202, 52, 49, 0.8)'; // Red for mistakes/blunders
+          
           const arrowList: Arrow[] = currentMove.arrows.map(
             (arrow: MoveArrow) => ({
               startSquare: arrow.from,
               endSquare: arrow.to,
-              color: 'rgb(239, 68, 68)'
+              color: arrowColor
             })
           );
           setArrows(arrowList);
