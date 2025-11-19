@@ -33,39 +33,44 @@ export function AnalysisBoard({
 
   // Update board position when move index changes
   useEffect(() => {
-    game.reset();
-    
-    if (currentMoveIndex >= 0 && currentMoveIndex < moves.length) {
-      // Play all moves up to current index
-      for (let i = 0; i <= currentMoveIndex; i++) {
-        const move = moves[i];
-        try {
-          game.move(move.uci);
-        } catch (error) {
-          console.error('Failed to play move:', move.uci, error);
+    const updatePosition = () => {
+      game.reset();
+      
+      if (currentMoveIndex >= 0 && currentMoveIndex < moves.length) {
+        // Play all moves up to current index
+        for (let i = 0; i <= currentMoveIndex; i++) {
+          const move = moves[i];
+          try {
+            game.move(move.uci);
+          } catch (error) {
+            console.error('Failed to play move:', move.uci, error);
+          }
         }
-      }
-      
-      setPosition(game.fen());
-      
-      // Set arrows for mistakes/blunders
-      const currentMove = moves[currentMoveIndex];
-      if (currentMove.arrows && currentMove.arrows.length > 0) {
-        const arrowList: Arrow[] = currentMove.arrows.map(
-          (arrow: MoveArrow) => ({
-            startSquare: arrow.from,
-            endSquare: arrow.to,
-            color: 'rgb(239, 68, 68)'
-          })
-        );
-        setArrows(arrowList);
+        
+        const newPosition = game.fen();
+        setPosition(newPosition);
+        
+        // Set arrows for mistakes/blunders/inaccuracies
+        const currentMove = moves[currentMoveIndex];
+        if (currentMove.arrows && currentMove.arrows.length > 0) {
+          const arrowList: Arrow[] = currentMove.arrows.map(
+            (arrow: MoveArrow) => ({
+              startSquare: arrow.from,
+              endSquare: arrow.to,
+              color: 'rgb(239, 68, 68)'
+            })
+          );
+          setArrows(arrowList);
+        } else {
+          setArrows([]);
+        }
       } else {
+        setPosition(game.fen());
         setArrows([]);
       }
-    } else {
-      setPosition(game.fen());
-      setArrows([]);
-    }
+    };
+    
+    updatePosition();
   }, [currentMoveIndex, moves, game]);
 
   const currentMove = currentMoveIndex >= 0 ? moves[currentMoveIndex] : null;

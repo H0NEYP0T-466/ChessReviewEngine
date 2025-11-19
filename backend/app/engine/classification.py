@@ -24,14 +24,21 @@ def classify_move(
     """
     Classify a move based on centipawn loss and context.
     
-    New Classification thresholds (based on spec):
-    - Brilliant: ≥ +2.00 (special case: huge advantage from equal/close position)
-    - Excellent/Best: +1.00 to +2.00 (100-200cp improvement over best)
-    - Great: +0.50 to +1.00 (50-100cp improvement)
-    - Good: +0.20 to +0.50 (20-50cp improvement)
-    - Inaccuracy: -0.20 to -0.50 (20-50cp loss)
-    - Mistake: -0.50 to -1.00 (50-100cp loss)
-    - Blunder: ≤ -1.00 (≥100cp loss)
+    Classification thresholds (diff_cp is centipawn LOSS vs best move):
+    - Brilliant: Special case - best move creating ≥200cp advantage
+    - Best: 0-20cp loss (includes excellent moves in spec)
+    - Good: 20-50cp loss  
+    - Inaccuracy: 50-100cp loss (was called "great" or "mistake" range in old spec)
+    - Mistake: 100cp+ loss
+    - Blunder: 100cp+ loss (same as mistake for now, can be separated by context)
+    
+    Note: The spec mentions "Good: +0.20 to +0.50" meaning moves that improve 
+    position by 0.2-0.5 vs baseline. In practice, we classify based on how much 
+    WORSE than the best move, so:
+    - 0-20cp worse than best = Best/Excellent
+    - 20-50cp worse = Good
+    - 50-100cp worse = Inaccuracy  
+    - 100cp+ worse = Mistake/Blunder
     
     Args:
         diff_cp: Absolute centipawn difference between best and played move (positive = loss)
@@ -46,42 +53,31 @@ def classify_move(
         Move classification
     """
     # Opening theory moves - only mark as theory if it's a very good move
-    if is_opening and diff_cp <= settings.THRESHOLD_GOOD:
+    if is_opening and diff_cp <= settings.THRESHOLD_BEST:
         return "theory"
     
-    # Check for brilliant move - requires major improvement
-    # Brilliant is for moves that are essentially best AND create huge advantage
-    if board and diff_cp <= settings.THRESHOLD_BEST:
-        # Only check brilliant if it's essentially the best move
+    # Check for brilliant move - requires being essentially the best move
+    # AND creating a huge advantage
+    if board and diff_cp <= 10:  # Must be within 10cp of best
         if _is_brilliant_candidate(
             played_move, board, eval_before, eval_after, diff_cp
         ):
             logger.info(f"Brilliant move detected: {played_move} with eval swing")
             return "brilliant"
     
-    # Standard classifications based on centipawn loss
-    # Following the new specification exactly:
-    # Best/Excellent: 0-20cp loss
-    # Great: 20-50cp loss  
-    # Good: 50-100cp loss
-    # Inaccuracy: 100-200cp loss (removed, doesn't fit spec)
-    # Mistake: 100cp+ loss (was inaccuracy range)
-    # Blunder: 200cp+ loss
-    
-    # Actually re-reading spec: Good moves IMPROVE position by 0.2-0.5
-    # So we need to classify based on how close to best move:
-    if diff_cp <= settings.THRESHOLD_BEST:  # 0-10cp loss
+    # Standard classifications based on centipawn loss vs best move
+    if diff_cp <= settings.THRESHOLD_BEST:  # 0-20cp loss
         return "best"
-    elif diff_cp <= settings.THRESHOLD_GOOD:  # 10-20cp loss
+    elif diff_cp <= settings.THRESHOLD_GOOD:  # 20-50cp loss
         return "good"
-    elif diff_cp <= settings.THRESHOLD_INACCURACY:  # 20-20cp (redundant)
-        return "good"
-    elif diff_cp <= settings.THRESHOLD_MISTAKE:  # 20-50cp loss
+    elif diff_cp < settings.THRESHOLD_MISTAKE:  # 50-100cp loss
         return "inaccuracy"
-    elif diff_cp <= settings.THRESHOLD_BLUNDER:  # 50-100cp loss
-        return "mistake"
     else:  # >= 100cp loss
-        return "blunder"
+        # Could separate mistake (100-200) from blunder (200+) here
+        if diff_cp >= 200:
+            return "blunder"
+        else:
+            return "mistake"
 
 
 def _is_brilliant_candidate(
