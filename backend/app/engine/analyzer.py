@@ -13,32 +13,57 @@ from ..utils.logging import logger
 analysis_storage: dict[str, GameAnalysisResult] = {}
 
 
-def is_opening_phase(board: chess.Board, move_number: int, move: chess.Move) -> bool:
+def is_opening_phase(board: chess.Board, move_number: int, move: chess.Move, eval_diff_cp: int = 0) -> bool:
     """
     Intelligent opening phase detection.
     
     Opening ends when ANY of these conditions are met:
-    1. Move number > 12 AND both sides have developed 3+ minor pieces
-    2. Both sides have castled
-    3. Queens are traded off
-    4. A tactical blow occurs (capture with eval swing > 100cp, checks in early game)
-    5. Move number > 20 (hard limit)
+    1. TACTICAL SHARPNESS: Check/capture with significant eval swing (>80cp)
+    2. Move number > 12 AND both sides have developed 3+ minor pieces
+    3. Both sides have castled
+    4. Queens are traded off
+    5. Multiple captures in early game (move 6-10)
+    6. Move number > 20 (hard limit)
+    
+    Args:
+        board: Chess board BEFORE the move
+        move_number: Current move number (starting from 0)
+        move: The move being played
+        eval_diff_cp: Evaluation difference for this move
+    
+    Returns:
+        True if still in opening, False if middlegame/endgame
     """
-    # Hard limits
+    # Hard limit
     if move_number >= 20:
         return False
     
-    if move_number < 4:  # First 4 moves always opening
+    # Allow first 2 moves to always be opening (e4, e5, etc.)
+    if move_number < 2:
         return True
     
     # Check for tactical complications (suggests opening theory is over)
     is_capture = board.is_capture(move)
     is_check = board.gives_check(move)
     
-    # If there's a capture or check after move 8, likely leaving theory
-    if move_number >= 8 and (is_capture or is_check):
-        logger.info(f"Move {move_number}: Tactical complication detected (capture={is_capture}, check={is_check}) - likely middlegame")
-        return False
+    # CRITICAL FIX: If there's a sharp tactical blow (check/capture with big eval swing),
+    # opening is OVER regardless of move number
+    if is_capture or is_check:
+        # If eval swing is significant (>80cp), it's a tactical blow = middlegame
+        if eval_diff_cp > 80:
+            logger.info(
+                f"Move {move_number}: SHARP TACTICAL BLOW detected "
+                f"(capture={is_capture}, check={is_check}, eval_swing={eval_diff_cp}cp) - MIDDLEGAME"
+            )
+            return False
+        
+        # If capture/check after move 6, likely leaving opening
+        if move_number >= 6:
+            logger.info(
+                f"Move {move_number}: Tactical complication detected "
+                f"(capture={is_capture}, check={is_check}) - likely middlegame"
+            )
+            return False
     
     # Count developed pieces (not on starting squares)
     white_developed = 0
@@ -157,9 +182,6 @@ async def analyze_game(
             best_eval_raw = get_cp_evaluation(engine, fen_before, perspective_white=True)
             best_eval_cp = best_eval_raw if is_white_turn else -best_eval_raw
             
-            # SMART OPENING DETECTION: Check if we're still in opening phase
-            is_opening = is_opening_phase(board, i, move)
-            
             # Make the move
             board.push(move)
             fen_after = board.fen()
@@ -182,6 +204,15 @@ async def analyze_game(
             
             # Calculate evaluation difference (centipawn loss)
             eval_diff_cp = max(0, best_eval_cp - played_eval_cp)
+            
+            # SMART OPENING DETECTION: Check if we're still in opening phase
+            # CRITICAL: Pass eval_diff_cp to detect sharp tactical blows
+            is_opening = is_opening_phase(
+                chess.Board(fen_before),  # Board BEFORE the move
+                i, 
+                move, 
+                eval_diff_cp
+            )
             
             # === CRITICAL FIX: Get BOTH player's own previous move AND opponent's previous move ===
             if side == "white":

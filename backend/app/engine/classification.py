@@ -24,18 +24,15 @@ def classify_move_by_winrate(
     """
     Classify a move based on win-rate loss and strategic patterns.
     
-    STRICT RULES:
-    1. NO opening moves can be "great" - only theory/best
-    2. Top engine move = BEST or BRILLIANT (never great in opening)
-    3. GREAT only in two scenarios:
-       a) After YOUR brilliant move, next YOUR top engine move = GREAT
-       b) After OPPONENT's mistake/miss/blunder, YOUR top engine move = GREAT
-    4. Excellent = Not top move, but playable (minimal position harm)
-    5. Good/Inaccuracy/Mistake/Blunder = standard thresholds
+    STRICT CLASSIFICATION ORDER:
+    1. ALWAYS check for BRILLIANT first (even if not best move!)
+    2. Check for GREAT (after your brilliant OR after opponent's error)
+    3. Then apply theory/best/excellent/good/mistake/blunder logic
     
-    Args:
-        previous_classification: YOUR last move's classification
-        opponent_previous_classification: OPPONENT's last move's classification
+    BRILLIANT CRITERIA:
+    - Must have sacrifice OR hanging piece pattern
+    - Position must improve OR stay equal (minimal eval loss)
+    - Even if not #1 engine choice, can still be brilliant if it's a strong sacrifice
     """
     # Check for checkmate
     if board:
@@ -66,63 +63,71 @@ def classify_move_by_winrate(
         f"your_prev={previous_classification}, opp_prev={opponent_previous_classification}"
     )
     
-    # === TOP ENGINE MOVE LOGIC ===
-    if is_best_move:
-        logger.info(f"Move {played_move} is the TOP ENGINE MOVE")
-        
-        # Check for brilliant patterns FIRST (only outside opening)
-        if board and not is_garbage_time and not is_opening:
-            brilliant_type = _check_brilliant_patterns(
-                played_move, board, best_eval_cp, played_eval_cp
-            )
-            if brilliant_type:
+    # === STEP 1: ALWAYS CHECK FOR BRILLIANT FIRST ===
+    # CRITICAL FIX: Check for brilliant even if NOT the #1 engine move!
+    # A move can be brilliant if it's a strong sacrifice with minimal eval loss
+    if board and not is_garbage_time:
+        # Check if move has brilliant pattern (sacrifice/hanging)
+        brilliant_type = _check_brilliant_patterns(
+            played_move, board, best_eval_cp, played_eval_cp, eval_diff_cp
+        )
+        if brilliant_type:
+            # Verify that eval loss is acceptable for a brilliant move
+            # Brilliant moves can lose some eval but not too much
+            if eval_diff_cp <= 50:  # Less than 0.5 pawns worse
                 logger.info(
-                    f"⭐ BRILLIANT move detected: {played_move} - {brilliant_type}"
+                    f"⭐ BRILLIANT move detected: {played_move} - {brilliant_type} "
+                    f"(eval_diff={eval_diff_cp}cp)"
                 )
                 return "brilliant"
-        
-        # === STRICT "GREAT" CRITERIA ===
-        # RULE: NO opening moves can be "great"
-        if not is_opening:
-            # Scenario 1: After YOUR brilliant move, next YOUR top engine move = GREAT
-            if previous_classification == "brilliant":
-                logger.info(f"✨ Top engine move after YOUR BRILLIANT = GREAT (continuation)")
-                return "great"
-            
-            # Scenario 2: After OPPONENT's mistake/miss/blunder, YOUR top engine move = GREAT
-            if opponent_previous_classification in ["mistake", "blunder", "inaccuracy"]:
+            else:
                 logger.info(
-                    f"✨ Top engine move after OPPONENT's {opponent_previous_classification} = GREAT (punishing)"
+                    f"Sacrifice pattern detected but eval loss too high "
+                    f"({eval_diff_cp}cp) - not brilliant"
                 )
-                return "great"
+    
+    # === STEP 2: CHECK FOR GREAT (ONLY FOR TOP ENGINE MOVES, NOT IN OPENING) ===
+    if is_best_move and not is_opening:
+        # Scenario 1: After YOUR brilliant move, next YOUR top engine move = GREAT
+        if previous_classification == "brilliant":
+            logger.info(f"✨ Top engine move after YOUR BRILLIANT = GREAT (continuation)")
+            return "great"
         
-        # === OPENING THEORY ===
-        if is_opening:
+        # Scenario 2: After OPPONENT's mistake/miss/blunder, YOUR top engine move = GREAT
+        if opponent_previous_classification in ["mistake", "blunder", "inaccuracy"]:
+            logger.info(
+                f"✨ Top engine move after OPPONENT's {opponent_previous_classification} = GREAT (punishing)"
+            )
+            return "great"
+    
+    # === STEP 3: OPENING THEORY LOGIC ===
+    if is_opening:
+        # For TOP engine moves in opening
+        if is_best_move:
             # In opening, top moves with minimal loss = theory
             if win_loss_pct <= 2.0 and eval_diff_cp <= 20:
                 logger.info(f"📖 Top engine move in opening = THEORY")
                 return "theory"
             else:
                 # Top move but with some eval loss in opening = best
-                logger.info(f"✓ Top engine move in opening = BEST")
+                logger.info(f"✓ Top engine move in opening (with eval loss) = BEST")
                 return "best"
         
-        # === OUTSIDE OPENING ===
-        # All other top moves (not meeting "great" criteria) = BEST
-        logger.info(f"✓ Top engine move = BEST")
-        return "best"
-    
-    # === NON-BEST MOVE LOGIC ===
-    
-    # OPENING THEORY for non-best moves (acceptable alternatives in known lines)
-    if is_opening:
-        # In opening, allow slightly suboptimal moves to be "theory"
+        # For NON-best moves in opening
+        # Allow slightly suboptimal moves to be "theory"
         if win_loss_pct <= 2.0 and eval_diff_cp <= 30:
             logger.info(
                 f"📖 Non-best move in opening = THEORY "
                 f"(win_loss={win_loss_pct:.2f}%, eval_diff={eval_diff_cp}cp)"
             )
             return "theory"
+    
+    # === STEP 4: TOP ENGINE MOVE OUTSIDE OPENING ===
+    if is_best_move and not is_opening:
+        logger.info(f"✓ Top engine move outside opening = BEST")
+        return "best"
+    
+    # === STEP 5: NON-BEST MOVES CLASSIFICATION ===
     
     # Garbage time: be more lenient
     if is_garbage_time:
@@ -141,9 +146,6 @@ def classify_move_by_winrate(
             f"win_loss={win_loss_pct:.2f}%)"
         )
         return "excellent"
-    
-    # GREAT can NEVER happen for non-best moves
-    # Moving directly to GOOD threshold
     
     # GOOD = 2.5% - 8% loss
     if win_loss_pct <= 8.0:
@@ -169,10 +171,26 @@ def _check_brilliant_patterns(
     move: chess.Move,
     board: chess.Board,
     eval_before: int,
-    eval_after: int
+    eval_after: int,
+    eval_diff_cp: int
 ) -> str | None:
     """
     Check if a move qualifies as brilliant based on strategic patterns.
+    
+    BRILLIANT CRITERIA:
+    1. Must have sacrifice OR hanging piece pattern
+    2. Position must improve OR stay roughly equal (eval_diff_cp <= 50)
+    3. Does NOT need to be #1 engine move (can be second-best if it's spectacular)
+    
+    PATTERNS:
+    A. Real sacrifice: Capture with more valuable piece, can be recaptured, loses material
+    B. Hanging piece: Move piece to attacked square where it can be captured
+    
+    Args:
+        eval_diff_cp: How much worse this move is compared to best (0 = best move)
+    
+    Returns:
+        Description of brilliant pattern, or None if not brilliant
     """
     piece = board.piece_at(move.from_square)
     if piece is None:
@@ -185,13 +203,13 @@ def _check_brilliant_patterns(
     board_after = board.copy()
     board_after.push(move)
     
-    # Pattern 1: REAL SACRIFICE (capturing with more valuable piece)
+    # === PATTERN 1: REAL SACRIFICE (capturing with more valuable piece) ===
     if is_capture:
         captured_piece = board.piece_at(move.to_square)
         if captured_piece:
             captured_value = _get_piece_value(captured_piece.piece_type)
             
-            # Check if we're giving up more material
+            # Check if we're giving up more material (e.g., Knight takes pawn)
             if piece_value > captured_value:
                 # Now check: Can our piece ACTUALLY be recaptured?
                 can_be_recaptured = board_after.is_attacked_by(
@@ -206,16 +224,18 @@ def _check_brilliant_patterns(
                     # Material will be lost if attackers > defenders
                     net_material_loss = piece_value - captured_value
                     
+                    # CRITICAL: We lose material, but position stays strong
                     if len(attackers) > len(defenders):
                         logger.info(
-                            f"⭐ REAL SACRIFICE: {piece.symbol()}({piece_value}) x "
+                            f"⭐ REAL SACRIFICE PATTERN: {piece.symbol()}({piece_value}) x "
                             f"{captured_piece.symbol()}({captured_value}) can be recaptured. "
-                            f"Net loss: {net_material_loss}. Attackers: {len(attackers)}, "
-                            f"Defenders: {len(defenders)}"
+                            f"Net loss: {net_material_loss} material. "
+                            f"Attackers: {len(attackers)}, Defenders: {len(defenders)}. "
+                            f"Eval: {eval_before} → {eval_after} (diff: {eval_diff_cp}cp)"
                         )
-                        return f"Real sacrifice: losing {net_material_loss} material"
+                        return f"Tactical sacrifice: losing {net_material_loss} material for attack"
     
-    # Pattern 2: HANGING PIECE SACRIFICE (non-capture to attacked square)
+    # === PATTERN 2: HANGING PIECE SACRIFICE (non-capture to attacked square) ===
     if not is_capture:
         # Check if destination square is attacked by opponent
         is_attacked = board_after.is_attacked_by(not board.turn, move.to_square)
@@ -225,15 +245,17 @@ def _check_brilliant_patterns(
             attackers = list(board_after.attackers(not board.turn, move.to_square))
             defenders = list(board_after.attackers(board.turn, move.to_square))
             
-            # If more attackers than defenders, piece is hanging
+            # If more attackers than defenders, piece is hanging (can be captured)
             if len(attackers) > len(defenders):
                 logger.info(
-                    f"⭐ BRILLIANT HANGING MOVE: {piece.symbol()} to {chess.square_name(move.to_square)}. "
+                    f"⭐ HANGING PIECE PATTERN: {piece.symbol()} to {chess.square_name(move.to_square)}. "
                     f"Attackers: {len(attackers)}, Defenders: {len(defenders)}. "
-                    f"Risking {piece_value} material for positional gain."
+                    f"Risking {piece_value} material. "
+                    f"Eval: {eval_before} → {eval_after} (diff: {eval_diff_cp}cp)"
                 )
-                return f"Strategic piece placement on attacked square"
+                return f"Bold piece placement on attacked square (risking {piece_value} material)"
     
+    # No brilliant pattern detected
     return None
 
 
@@ -271,11 +293,12 @@ def classify_move(
     is_best_move = (played_move_uci == best_move)
     
     if is_best_move:
-        if board and not is_opening:
+        # Check for brilliant first
+        if board:
             brilliant_type = _check_brilliant_patterns(
-                played_move, board, eval_before, eval_after
+                played_move, board, eval_before, eval_after, diff_cp
             )
-            if brilliant_type:
+            if brilliant_type and diff_cp <= 50:
                 return "brilliant"
         
         if is_opening and diff_cp <= 20:
