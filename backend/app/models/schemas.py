@@ -7,7 +7,7 @@ from pydantic import BaseModel, Field
 class AnalysisRequest(BaseModel):
     """Request model for game analysis."""
     pgn: str = Field(..., max_length=20000)
-    engine_depth: Optional[int] = Field(default=18, ge=1, le=30)
+    engine_depth: Optional[int] = Field(default=10, ge=1, le=30)
     time_per_move_ms: Optional[int] = Field(default=300, ge=50, le=5000)
 
 

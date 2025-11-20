@@ -12,7 +12,7 @@ import type {
   WebSocketMessage,
 } from '../types/analysis';
 
-const API_BASE_URL = 'http://localhost:8000';
+const API_BASE_URL = 'http://localhost:5000';
 
 /**
  * Start game analysis.
@@ -70,7 +70,7 @@ export function createWebSocket(
   onError?: (error: Event) => void,
   onClose?: () => void
 ): WebSocket {
-  const ws = new WebSocket(`ws://localhost:8000/ws/analyze/${taskId}`);
+  const ws = new WebSocket(`ws://localhost:5000/ws/analyze/${taskId}`);
 
   ws.onmessage = (event) => {
     try {
