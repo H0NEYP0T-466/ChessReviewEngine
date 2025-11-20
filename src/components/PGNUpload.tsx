@@ -43,13 +43,13 @@ export function PGNUpload({ onAnalyze, isLoading = false }: PGNUploadProps) {
   };
 
   return (
-    <div className="h-screen flex items-center justify-center p-6 overflow-hidden">
-      <div className="max-w-4xl w-full space-y-6">
-        <div className="text-center space-y-3">
-          <h1 className="text-5xl font-bold bg-gradient-to-r from-green-400 to-blue-500 bg-clip-text text-transparent">
+    <div className="min-h-screen flex items-center justify-center p-6">
+      <div className="max-w-4xl w-full space-y-8">
+        <div className="text-center space-y-4">
+          <h1 className="text-6xl font-bold bg-gradient-to-r from-green-400 to-blue-500 bg-clip-text text-transparent">
             Chess Review Engine
           </h1>
-          <p className="text-lg text-gray-400">
+          <p className="text-xl text-gray-400">
             Analyze your chess games with Stockfish AI
           </p>
           <div className="flex justify-center gap-6 text-sm text-gray-500">
@@ -68,16 +68,16 @@ export function PGNUpload({ onAnalyze, isLoading = false }: PGNUploadProps) {
           </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="bg-zinc-900 rounded-2xl p-6 shadow-2xl border border-zinc-800">
-            <label htmlFor="pgn-input" className="block text-lg font-semibold mb-3 text-gray-200">
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="bg-zinc-900 rounded-2xl p-8 shadow-2xl border border-zinc-800">
+            <label htmlFor="pgn-input" className="block text-lg font-semibold mb-4 text-gray-200">
               Paste Your PGN
             </label>
             <textarea
               id="pgn-input"
               value={pgn}
               onChange={(e) => setPgn(e.target.value)}
-              className="w-full h-56 px-4 py-3 bg-zinc-800 border border-zinc-700 rounded-xl 
+              className="w-full h-80 px-4 py-3 bg-zinc-800 border border-zinc-700 rounded-xl 
                        text-zinc-100 font-mono text-sm focus:ring-2 focus:ring-green-500 
                        focus:border-transparent resize-none transition-all"
               placeholder="Paste your PGN here..."
@@ -86,7 +86,7 @@ export function PGNUpload({ onAnalyze, isLoading = false }: PGNUploadProps) {
           </div>
 
           {error && (
-            <div className="bg-red-900 bg-opacity-30 border border-red-500 text-red-200 px-6 py-3 rounded-xl">
+            <div className="bg-red-900 bg-opacity-30 border border-red-500 text-red-200 px-6 py-4 rounded-xl">
               {error}
             </div>
           )}
@@ -95,7 +95,7 @@ export function PGNUpload({ onAnalyze, isLoading = false }: PGNUploadProps) {
             <button
               type="submit"
               disabled={isLoading}
-              className="px-8 py-3 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 
+              className="px-8 py-4 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 
                        disabled:from-gray-600 disabled:to-gray-700 text-white font-bold text-lg rounded-xl 
                        transition-all duration-200 disabled:cursor-not-allowed shadow-lg hover:shadow-green-500/50"
             >
@@ -106,7 +106,7 @@ export function PGNUpload({ onAnalyze, isLoading = false }: PGNUploadProps) {
               type="button"
               onClick={loadSample}
               disabled={isLoading}
-              className="px-8 py-3 bg-zinc-800 hover:bg-zinc-700 disabled:bg-zinc-900
+              className="px-8 py-4 bg-zinc-800 hover:bg-zinc-700 disabled:bg-zinc-900
                        text-white font-semibold text-lg rounded-xl transition-all duration-200
                        disabled:cursor-not-allowed border border-zinc-700"
             >
@@ -115,7 +115,7 @@ export function PGNUpload({ onAnalyze, isLoading = false }: PGNUploadProps) {
           </div>
         </form>
 
-        <div className="text-center text-xs text-gray-500">
+        <div className="text-center text-sm text-gray-500">
           <p>Powered by Stockfish • Built with React & TypeScript</p>
         </div>
       </div>
