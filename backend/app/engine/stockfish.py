@@ -1,5 +1,3 @@
-"""Stockfish engine wrapper and utilities."""
-
 import chess
 from stockfish import Stockfish
 from typing import Optional, Dict, Any
@@ -8,7 +6,6 @@ from ..utils.logging import logger
 
 
 class StockfishEngine:
-    """Wrapper for Stockfish engine."""
     
     def __init__(
         self,
@@ -17,15 +14,6 @@ class StockfishEngine:
         threads: Optional[int] = 4,
         hash_mb: Optional[int] = 256,
     ):
-        """
-        Initialize Stockfish engine.
-        
-        Args:
-            path: Path to stockfish binary (uses auto-detection if None)
-            depth: Search depth
-            threads: Number of threads
-            hash_mb: Hash table size in MB
-        """
         self.path = path if path is not None else settings.STOCKFISH_PATH
         self.depth = depth
         self.threads = threads or settings.ENGINE_THREADS
@@ -62,15 +50,6 @@ class StockfishEngine:
             raise RuntimeError(f"Could not initialize Stockfish engine: {str(e)}") from e
     
     def get_evaluation(self, fen: str) -> Dict[str, Any]:
-        """
-        Get position evaluation.
-        
-        Args:
-            fen: FEN position string
-            
-        Returns:
-            Dict with 'type' ('cp' or 'mate') and 'value' (int)
-        """
         try:
             self.engine.set_fen_position(fen)
             return self.engine.get_evaluation()
@@ -79,15 +58,6 @@ class StockfishEngine:
             return {"type": "cp", "value": 0}
     
     def get_best_move(self, fen: str) -> Optional[str]:
-        """
-        Get best move in UCI format.
-        
-        Args:
-            fen: FEN position string
-            
-        Returns:
-            Best move or None
-        """
         try:
             self.engine.set_fen_position(fen)
             return self.engine.get_best_move()
@@ -96,7 +66,6 @@ class StockfishEngine:
             return None
     
     def is_available(self) -> bool:
-        """Check if engine is available and working."""
         try:
             self.engine.set_fen_position(chess.STARTING_FEN)
             self.engine.get_best_move()
@@ -106,9 +75,6 @@ class StockfishEngine:
 
 
 def convert_mate_to_cp(eval_dict: Dict[str, Any]) -> int:
-    """
-    Convert mate eval to centipawn-like score.
-    """
     if eval_dict["type"] == "mate":
         mate_in = eval_dict["value"]
         if mate_in > 0:
@@ -119,9 +85,6 @@ def convert_mate_to_cp(eval_dict: Dict[str, Any]) -> int:
 
 
 def get_cp_evaluation(engine: StockfishEngine, fen: str, perspective_white: bool = True) -> int:
-    """
-    Get centipawn evaluation from chosen perspective.
-    """
     eval_dict = engine.get_evaluation(fen)
     cp = convert_mate_to_cp(eval_dict)
     

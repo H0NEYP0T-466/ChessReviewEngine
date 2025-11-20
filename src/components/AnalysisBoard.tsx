@@ -1,7 +1,3 @@
-/**
- * Main chess board component with navigation and analysis display.
- */
-
 import { useState, useEffect, useCallback } from 'react';
 import { Chessboard } from 'react-chessboard';
 import { Chess } from 'chess.js';
@@ -31,13 +27,11 @@ export function AnalysisBoard({
   const [position, setPosition] = useState(game.fen());
   const [arrows, setArrows] = useState<Arrow[]>([]);
 
-  // Update board position when move index changes
   useEffect(() => {
     const updatePosition = () => {
       game.reset();
       
       if (currentMoveIndex >= 0 && currentMoveIndex < moves.length) {
-        // Play all moves up to current index
         for (let i = 0; i <= currentMoveIndex; i++) {
           const move = moves[i];
           try {
@@ -50,16 +44,13 @@ export function AnalysisBoard({
         const newPosition = game.fen();
         setPosition(newPosition);
         
-        // Show arrows for best move (always displayed now)
         const currentMove = moves[currentMoveIndex];
         if (currentMove.arrows && currentMove.arrows.length > 0) {
-          // Use different colors based on move quality
-          // Green for best moves, Yellow for good moves, Red for mistakes/blunders
           const arrowColor = currentMove.classification === 'best' || currentMove.classification === 'excellent'
-            ? 'rgba(129, 182, 76, 0.8)' // Green for good moves
+            ? 'rgba(129, 182, 76, 0.8)'
             : currentMove.classification === 'great' || currentMove.classification === 'good'
-            ? 'rgba(92, 139, 176, 0.8)' // Blue for decent moves  
-            : 'rgba(202, 52, 49, 0.8)'; // Red for mistakes/blunders
+            ? 'rgba(92, 139, 176, 0.8)'
+            : 'rgba(202, 52, 49, 0.8)';
           
           const arrowList: Arrow[] = currentMove.arrows.map(
             (arrow: MoveArrow) => ({
@@ -83,7 +74,6 @@ export function AnalysisBoard({
 
   const currentMove = currentMoveIndex >= 0 ? moves[currentMoveIndex] : null;
 
-  // Extract destination square from UCI notation (e.g., "e2e4" -> "e4")
   const getDestinationSquare = (uci: string): string => {
     if (uci.length >= 4) {
       return uci.substring(2, 4);
@@ -111,7 +101,6 @@ export function AnalysisBoard({
     onMoveIndexChange(moves.length - 1);
   };
 
-  // Keyboard navigation
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       switch (event.key) {
@@ -134,7 +123,6 @@ export function AnalysisBoard({
 
   return (
     <div className="space-y-4">
-      {/* Board and Eval Bar */}
       <div className="flex gap-4 items-start">
         <EvalBar 
           evalCp={currentMove?.engine.played_eval_cp ?? 0} 
@@ -150,7 +138,6 @@ export function AnalysisBoard({
               allowDragging: false,
             }}
           />
-          {/* Classification overlay on destination square */}
           {currentMove && (
             <MoveClassificationOverlay
               classification={currentMove.classification}
@@ -161,7 +148,6 @@ export function AnalysisBoard({
         </div>
       </div>
 
-      {/* Move Info */}
       {currentMove && (
         <div className="bg-zinc-800 rounded-lg p-4 space-y-3">
           <div className="flex items-center justify-between">
@@ -200,7 +186,6 @@ export function AnalysisBoard({
             </div>
           </div>
 
-          {/* Show top engine move if current move is not best */}
           {currentMove.engine.eval_diff_cp > 10 && currentMove.engine.best_move && (
             <div className="mt-3 pt-3 border-t border-gray-700">
               <div className="text-sm">
@@ -218,7 +203,6 @@ export function AnalysisBoard({
         </div>
       )}
 
-      {/* Navigation Controls */}
       <div className="flex justify-center gap-2">
         <button
           onClick={handleFirst}
@@ -254,7 +238,6 @@ export function AnalysisBoard({
         </button>
       </div>
 
-      {/* Move counter */}
       <div className="text-center text-sm text-gray-400">
         Move {currentMoveIndex + 1} of {moves.length}
       </div>

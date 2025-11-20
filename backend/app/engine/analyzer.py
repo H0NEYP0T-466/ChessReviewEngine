@@ -1,5 +1,3 @@
-"""Game analysis engine."""
-
 import chess
 import asyncio
 from typing import Optional
@@ -12,7 +10,6 @@ from ..models.schemas import (
 from ..utils.logging import logger
 
 
-# In-memory storage for analysis results
 analysis_storage: dict[str, GameAnalysisResult] = {}
 
 
@@ -24,29 +21,12 @@ async def analyze_game(
     time_per_move_ms: int,
     ws_manager=None
 ) -> GameAnalysisResult:
-    """
-    Analyze a complete chess game.
-    
-    Args:
-        task_id: Unique task identifier
-        moves: List of chess moves
-        headers: PGN headers
-        depth: Engine search depth
-        time_per_move_ms: Time per move in milliseconds (not currently used)
-        ws_manager: WebSocket manager for streaming updates
-        
-    Returns:
-        Complete game analysis result
-    """
     logger.info(f"Starting game analysis: task_id={task_id}, total_moves={len(moves)}, depth={depth}")
     
-    # Initialize engine
     engine = StockfishEngine(depth=depth)
     
-    # Initialize board
     board = chess.Board()
     
-    # Analysis results
     move_analyses: list[MoveAnalysis] = []
     white_cpl: list[int] = []
     black_cpl: list[int] = []
@@ -56,84 +36,64 @@ async def analyze_game(
     black_stats = {"blunders": 0, "mistakes": 0, "inaccuracies": 0, "brilliant": 0,
                    "best": 0, "excellent": 0, "great": 0, "good": 0}
     
-    # Analyze each move
     for i, move in enumerate(moves):
         try:
-            # Determine side
             side = "white" if board.turn == chess.WHITE else "black"
             
-            # Get FEN before move
             fen_before = board.fen()
             
-            # Convert move to SAN before playing it
             san = board.san(move)
             uci = move.uci()
             
-            # Get best move and evaluation before playing
             best_move_uci = engine.get_best_move(fen_before)
             if best_move_uci is None:
-                best_move_uci = uci  # Fallback
+                best_move_uci = uci
             
-            # CRITICAL FIX: Get evaluations from the CURRENT PLAYER's perspective
-            # For White: positive eval = advantage, negative = disadvantage
-            # For Black: negative eval = advantage, positive = disadvantage
-            # We normalize so POSITIVE = advantage for current player
-            
-            # Get evaluation from WHITE's perspective (for eval bar consistency)
             best_eval_cp_white = get_cp_evaluation(engine, fen_before, perspective_white=True)
             
-            # Get evaluation from CURRENT PLAYER's perspective (for classification)
-            # If it's White's turn, use White's perspective (positive = good)
-            # If it's Black's turn, FLIP the sign (so negative eval becomes positive advantage)
             is_white_turn = (side == "white")
             best_eval_raw = get_cp_evaluation(engine, fen_before, perspective_white=True)
             best_eval_cp = best_eval_raw if is_white_turn else -best_eval_raw
             
-            # Play the actual move
             board.push(move)
             fen_after = board.fen()
             
-            # Get evaluation after the played move from WHITE's perspective (for eval bar)
-            played_eval_cp_white = get_cp_evaluation(engine, fen_after, perspective_white=True)
+            is_checkmate = board.is_checkmate()
             
-            # Get evaluation from CURRENT PLAYER's perspective (for classification)
-            played_eval_raw = get_cp_evaluation(engine, fen_after, perspective_white=True)
-            played_eval_cp = played_eval_raw if is_white_turn else -played_eval_raw
+            if is_checkmate:
+                if is_white_turn:
+                    played_eval_cp_white = 10000
+                else:
+                    played_eval_cp_white = -10000
+                played_eval_cp = 10000
+            else:
+                played_eval_cp_white = get_cp_evaluation(engine, fen_after, perspective_white=True)
+                played_eval_raw = get_cp_evaluation(engine, fen_after, perspective_white=True)
+                played_eval_cp = played_eval_raw if is_white_turn else -played_eval_raw
             
-            # Now both best_eval_cp and played_eval_cp are from the player's perspective
-            # Higher value = better for the player (regardless of color)
-            # Calculate the loss: if played_eval < best_eval, that's a mistake
-            eval_diff_cp = max(0, best_eval_cp - played_eval_cp)  # Loss in centipawns
+            eval_diff_cp = max(0, best_eval_cp - played_eval_cp)
             
-            # Classify the move using win% based classification
-            is_opening = i < 15  # Simple heuristic: first 15 moves are "opening"
+            is_opening = i < 15
             classification = classify_move_by_winrate(
                 best_eval_cp=best_eval_cp,
                 played_eval_cp=played_eval_cp,
                 played_move=move,
                 best_move=best_move_uci,
                 is_opening=is_opening,
-                board=chess.Board(fen_before),  # Board before move for brilliant detection
+                board=chess.Board(fen_before),
                 player_turn_white=is_white_turn
             )
             
-            # Calculate move accuracy
             move_accuracy = calculate_accuracy([eval_diff_cp])
             
-            # FIXED: Always create arrow for best move (not just for mistakes)
-            # This helps users see what the engine recommended
             arrows = []
             if best_move_uci and len(best_move_uci) >= 4:
-                # Always show the best move arrow
                 arrows.append(MoveArrow(
                     from_square=best_move_uci[:2],
                     to_square=best_move_uci[2:4],
                     type="best"
                 ))
             
-            # Create move analysis
-            # Use WHITE's perspective for played_eval_cp (for eval bar)
-            # But use player's perspective for best_eval_cp and win probability
             move_analysis = MoveAnalysis(
                 index=i,
                 side=side,
@@ -156,7 +116,6 @@ async def analyze_game(
             
             move_analyses.append(move_analysis)
             
-            # Track CPL and stats
             if side == "white":
                 white_cpl.append(eval_diff_cp)
                 white_stats[classification] = white_stats.get(classification, 0) + 1
@@ -164,14 +123,12 @@ async def analyze_game(
                 black_cpl.append(eval_diff_cp)
                 black_stats[classification] = black_stats.get(classification, 0) + 1
             
-            # Log move analysis
             logger.info(
                 f"task_id={task_id} move_index={i} side={side} san={san} "
                 f"best={best_move_uci} played_eval={played_eval_cp} best_eval={best_eval_cp} "
                 f"diff={eval_diff_cp} classification={classification}"
             )
             
-            # Stream update via WebSocket
             if ws_manager:
                 update = StreamingUpdate(
                     task_id=task_id,
@@ -187,21 +144,17 @@ async def analyze_game(
                 await ws_manager.broadcast(task_id, update.model_dump())
                 logger.info(f"Streaming move {i} task_id={task_id}")
             
-            # Small delay to prevent blocking
             await asyncio.sleep(0.01)
             
         except Exception as e:
             logger.error(f"Error analyzing move {i}: {str(e)}")
-            # Continue with next move
             continue
     
-    # Calculate final accuracy
     white_accuracy = calculate_accuracy(white_cpl) if white_cpl else 100.0
     black_accuracy = calculate_accuracy(black_cpl) if black_cpl else 100.0
     
     logger.info(f"Computed accuracy: task_id={task_id} white={white_accuracy:.2f} black={black_accuracy:.2f}")
     
-    # Create summary
     summary = GameSummary(
         white=PlayerSummary(
             accuracy=white_accuracy,
@@ -227,7 +180,6 @@ async def analyze_game(
         )
     )
     
-    # Create final result
     result = GameAnalysisResult(
         task_id=task_id,
         headers=headers,
@@ -235,12 +187,10 @@ async def analyze_game(
         summary=summary
     )
     
-    # Store result
     analysis_storage[task_id] = result
     
     logger.info(f"Analysis complete: task_id={task_id}")
     
-    # Send completion message via WebSocket
     if ws_manager:
         completion = CompletionMessage(
             task_id=task_id,
@@ -254,5 +204,4 @@ async def analyze_game(
 
 
 def get_analysis_result(task_id: str) -> Optional[GameAnalysisResult]:
-    """Retrieve stored analysis result."""
     return analysis_storage.get(task_id)
