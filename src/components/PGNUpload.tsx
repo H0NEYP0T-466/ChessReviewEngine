@@ -1,7 +1,3 @@
-/**
- * Component for uploading and submitting PGN for analysis.
- */
-
 import { useState } from 'react';
 
 interface PGNUploadProps {
@@ -47,53 +43,82 @@ export function PGNUpload({ onAnalyze, isLoading = false }: PGNUploadProps) {
   };
 
   return (
-    <div className="max-w-4xl mx-auto">
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <label htmlFor="pgn-input" className="block text-sm font-medium mb-2">
-            Paste PGN
-          </label>
-          <textarea
-            id="pgn-input"
-            value={pgn}
-            onChange={(e) => setPgn(e.target.value)}
-            className="w-full h-64 px-4 py-3 bg-zinc-800 border border-zinc-700 rounded-lg 
-                     text-zinc-100 font-mono text-sm focus:ring-2 focus:ring-green-500 
-                     focus:border-transparent resize-none"
-            placeholder="Paste your PGN here..."
-            disabled={isLoading}
-          />
-        </div>
-
-        {error && (
-          <div className="bg-red-900 bg-opacity-30 border border-red-500 text-red-200 px-4 py-3 rounded">
-            {error}
+    <div className="min-h-screen flex items-center justify-center p-6">
+      <div className="max-w-4xl w-full space-y-8">
+        <div className="text-center space-y-4">
+          <h1 className="text-6xl font-bold bg-gradient-to-r from-green-400 to-blue-500 bg-clip-text text-transparent">
+            Chess Review Engine
+          </h1>
+          <p className="text-xl text-gray-400">
+            Analyze your chess games with Stockfish AI
+          </p>
+          <div className="flex justify-center gap-6 text-sm text-gray-500">
+            <div className="flex items-center gap-2">
+              <span className="text-green-400">✓</span>
+              <span>Move Classification</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-green-400">✓</span>
+              <span>Accuracy Analysis</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-green-400">✓</span>
+              <span>Best Move Suggestions</span>
+            </div>
           </div>
-        )}
-
-        <div className="flex gap-3">
-          <button
-            type="submit"
-            disabled={isLoading}
-            className="px-6 py-3 bg-green-600 hover:bg-green-700 disabled:bg-gray-600 
-                     text-white font-semibold rounded-lg transition-colors duration-200
-                     disabled:cursor-not-allowed"
-          >
-            {isLoading ? 'Analyzing...' : 'Analyze Game'}
-          </button>
-          
-          <button
-            type="button"
-            onClick={loadSample}
-            disabled={isLoading}
-            className="px-6 py-3 bg-gray-700 hover:bg-gray-600 disabled:bg-gray-800
-                     text-white font-semibold rounded-lg transition-colors duration-200
-                     disabled:cursor-not-allowed"
-          >
-            Load Sample
-          </button>
         </div>
-      </form>
+
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="bg-zinc-900 rounded-2xl p-8 shadow-2xl border border-zinc-800">
+            <label htmlFor="pgn-input" className="block text-lg font-semibold mb-4 text-gray-200">
+              Paste Your PGN
+            </label>
+            <textarea
+              id="pgn-input"
+              value={pgn}
+              onChange={(e) => setPgn(e.target.value)}
+              className="w-full h-80 px-4 py-3 bg-zinc-800 border border-zinc-700 rounded-xl 
+                       text-zinc-100 font-mono text-sm focus:ring-2 focus:ring-green-500 
+                       focus:border-transparent resize-none transition-all"
+              placeholder="Paste your PGN here..."
+              disabled={isLoading}
+            />
+          </div>
+
+          {error && (
+            <div className="bg-red-900 bg-opacity-30 border border-red-500 text-red-200 px-6 py-4 rounded-xl">
+              {error}
+            </div>
+          )}
+
+          <div className="flex gap-4 justify-center">
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="px-8 py-4 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 
+                       disabled:from-gray-600 disabled:to-gray-700 text-white font-bold text-lg rounded-xl 
+                       transition-all duration-200 disabled:cursor-not-allowed shadow-lg hover:shadow-green-500/50"
+            >
+              {isLoading ? 'Analyzing...' : '🚀 Analyze Game'}
+            </button>
+            
+            <button
+              type="button"
+              onClick={loadSample}
+              disabled={isLoading}
+              className="px-8 py-4 bg-zinc-800 hover:bg-zinc-700 disabled:bg-zinc-900
+                       text-white font-semibold text-lg rounded-xl transition-all duration-200
+                       disabled:cursor-not-allowed border border-zinc-700"
+            >
+              Load Sample
+            </button>
+          </div>
+        </form>
+
+        <div className="text-center text-sm text-gray-500">
+          <p>Powered by Stockfish • Built with React & TypeScript</p>
+        </div>
+      </div>
     </div>
   );
 }

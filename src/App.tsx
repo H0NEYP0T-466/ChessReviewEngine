@@ -1,8 +1,3 @@
-/**
- * HoneyPotEngine - Main Application Component
- * Chess Game Review System
- */
-
 import { useState, useEffect } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster, toast } from 'react-hot-toast';
@@ -23,7 +18,6 @@ function AppContent() {
   const [analysisProgress, setAnalysisProgress] = useState(0);
   const [ws, setWs] = useState<WebSocket | null>(null);
 
-  // Cleanup WebSocket on unmount
   useEffect(() => {
     return () => {
       if (ws) {
@@ -38,24 +32,18 @@ function AppContent() {
       setAnalysisProgress(0);
       setGameAnalysis(null);
       
-      // Start analysis
       const response = await startAnalysis({ pgn });
       
       toast.success(`Analysis started! Total moves: ${response.total_moves}`);
       
-      // Connect to WebSocket for live updates
       const websocket = createWebSocket(
         response.task_id,
-        // Handle streaming updates
         (update: StreamingUpdate) => {
-          // Update progress
           setAnalysisProgress(update.progress);
         },
-        // Handle completion message
         async (completion: CompletionMessage) => {
           console.log(`Analysis complete (${completion.total_moves} moves), fetching full results...`);
           try {
-            // Fetch complete analysis
             const completeAnalysis = await getGameAnalysis(response.task_id);
             setGameAnalysis(completeAnalysis);
             setCurrentMoveIndex(0);
@@ -67,13 +55,11 @@ function AppContent() {
             setIsAnalyzing(false);
           }
         },
-        // Handle WebSocket error
         (error) => {
           console.error('WebSocket error:', error);
           toast.error('Connection error during analysis');
           setIsAnalyzing(false);
         },
-        // Handle WebSocket close
         () => {
           console.log('WebSocket connection closed');
         }
@@ -91,17 +77,13 @@ function AppContent() {
 
   return (
     <div className="min-h-screen bg-dark-bg text-dark-text">
-      {/* Main Content */}
       <main className="max-w-7xl mx-auto px-6 py-6">
         {!gameAnalysis ? (
-          // Upload View
           <div className="space-y-6">
             <PGNUpload onAnalyze={handleAnalyze} isLoading={isAnalyzing} />
           </div>
         ) : (
-          // Analysis View - Updated Layout
           <div className="flex flex-col lg:flex-row gap-6">
-            {/* Left column - Board and Accuracy */}
             <div className="flex-1 space-y-6">
               <AnalysisBoard
                 moves={gameAnalysis.moves}
@@ -109,7 +91,6 @@ function AppContent() {
                 onMoveIndexChange={setCurrentMoveIndex}
               />
               
-              {/* Accuracy Panel below board */}
               <AccuracyPanel
                 whiteSummary={gameAnalysis.summary.white}
                 blackSummary={gameAnalysis.summary.black}
@@ -117,7 +98,6 @@ function AppContent() {
                 blackPlayer={gameAnalysis.headers.Black}
               />
 
-              {/* New Analysis Button */}
               <button
                 onClick={() => {
                   setGameAnalysis(null);
@@ -130,9 +110,7 @@ function AppContent() {
               </button>
             </div>
 
-            {/* Right column - Game Info and Move List */}
             <div className="lg:w-80 space-y-6">
-              {/* Game Info */}
               <div className="bg-dark-surface rounded-lg p-4">
                 <h3 className="text-lg font-semibold mb-2">Game Info</h3>
                 <div className="space-y-1 text-sm">
@@ -151,7 +129,6 @@ function AppContent() {
                 </div>
               </div>
 
-              {/* Move List on the side */}
               <MoveList
                 moves={gameAnalysis.moves}
                 currentMoveIndex={currentMoveIndex}
@@ -162,7 +139,6 @@ function AppContent() {
         )}
       </main>
 
-      {/* Loading Overlay */}
       {isAnalyzing && (
         <LoadingOverlay
           progress={analysisProgress}
@@ -170,7 +146,6 @@ function AppContent() {
         />
       )}
 
-      {/* Toast Notifications */}
       <Toaster
         position="top-right"
         toastOptions={{
