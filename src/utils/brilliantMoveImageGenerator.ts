@@ -9,7 +9,6 @@ export interface BrilliantMoveImageOptions {
   fen: string;
   username: string;
   moveNotation: string;
-  playerSide: 'white' | 'black';
   uci?: string;
 }
 
@@ -17,6 +16,14 @@ interface CanvasPosition {
   top: number;
   left: number;
 }
+
+/**
+ * Unicode chess piece symbols mapping.
+ */
+const CHESS_PIECES: Record<string, string> = {
+  'wP': '♙', 'wN': '♘', 'wB': '♗', 'wR': '♖', 'wQ': '♕', 'wK': '♔',
+  'bP': '♟', 'bN': '♞', 'bB': '♝', 'bR': '♜', 'bQ': '♛', 'bK': '♚',
+};
 
 /**
  * Draw a chessboard + pieces and side panel, then return canvas.
@@ -120,7 +127,7 @@ export async function createBrilliantMoveImage({
   cursorY += 50;
   ctx.fillStyle = '#D0CFCC';
   ctx.font = '600 16px Arial, sans-serif';
-  ctx.fillText(username.toUpperCase() + ' played a', paddingX, cursorY);
+  ctx.fillText(`${username.toUpperCase()} played a`, paddingX, cursorY);
 
   cursorY += 34;
   ctx.fillStyle = '#FFFFFF';
@@ -184,18 +191,12 @@ function drawPiece(
 ): void {
   ctx.save();
   
-  // Unicode chess pieces
-  const pieces: Record<string, string> = {
-    'wP': '♙', 'wN': '♘', 'wB': '♗', 'wR': '♖', 'wQ': '♕', 'wK': '♔',
-    'bP': '♟', 'bN': '♞', 'bB': '♝', 'bR': '♜', 'bQ': '♛', 'bK': '♚',
-  };
-  
   const key = (color === 'w' ? 'w' : 'b') + type.toUpperCase();
-  const piece = pieces[key];
+  const piece = CHESS_PIECES[key];
   
   if (piece) {
     ctx.fillStyle = color === 'w' ? '#FFFFFF' : '#000000';
-    ctx.font = 'bold ' + (size * 0.75) + 'px Arial, sans-serif';
+    ctx.font = `bold ${size * 0.75}px Arial, sans-serif`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillText(piece, x + size / 2, y + size / 2);
@@ -219,7 +220,7 @@ function drawExclaimBadge(
   ctx.arc(cx, cy, r, 0, Math.PI * 2);
   ctx.fill();
   ctx.fillStyle = '#FFFFFF';
-  ctx.font = '700 ' + r * 1.1 + 'px Arial, sans-serif';
+  ctx.font = `700 ${r * 1.1}px Arial, sans-serif`;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   ctx.fillText('!!', cx, cy);
@@ -241,7 +242,7 @@ function drawStarBadge(
   ctx.arc(x + diameter / 2, y + diameter / 2, diameter / 2, 0, Math.PI * 2);
   ctx.fill();
   ctx.fillStyle = '#FFFFFF';
-  ctx.font = '700 ' + diameter * 0.7 + 'px Arial, sans-serif';
+  ctx.font = `700 ${diameter * 0.7}px Arial, sans-serif`;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   ctx.fillText('★', x + diameter / 2, y + diameter / 2 + 1);
@@ -273,11 +274,19 @@ function roundRect(
 }
 
 /**
+ * Sanitize filename by removing invalid characters.
+ */
+export function sanitizeFilename(filename: string): string {
+  // Replace invalid filename characters with underscores
+  return filename.replace(/[/\\:*?"<>|]/g, '_');
+}
+
+/**
  * Download utility.
  */
 export function downloadCanvas(canvas: HTMLCanvasElement, filename = 'brilliant_move.png'): void {
   const link = document.createElement('a');
-  link.download = filename;
+  link.download = sanitizeFilename(filename);
   link.href = canvas.toDataURL('image/png');
   link.click();
 }

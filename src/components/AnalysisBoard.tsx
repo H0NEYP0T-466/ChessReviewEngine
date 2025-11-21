@@ -5,7 +5,7 @@ import { toast } from 'react-hot-toast';
 import { EvalBar } from './EvalBar';
 import { ClassificationBadge } from './ClassificationBadge';
 import { MoveClassificationOverlay } from './MoveClassificationOverlay';
-import { createBrilliantMoveImage, downloadCanvas } from '../utils/brilliantMoveImageGenerator';
+import { createBrilliantMoveImage, downloadCanvas, sanitizeFilename } from '../utils/brilliantMoveImageGenerator';
 import type { MoveAnalysis, MoveArrow } from '../types/analysis';
 
 interface AnalysisBoardProps {
@@ -120,11 +120,10 @@ export function AnalysisBoard({
         fen: position,
         username: playerName,
         moveNotation: currentMove.san,
-        playerSide: currentMove.side,
         uci: currentMove.uci,
       });
       
-      const filename = `brilliant_move_${playerName.replace(/\s+/g, '_')}_${currentMove.san}.png`;
+      const filename = sanitizeFilename(`brilliant_move_${playerName}_${currentMove.san}.png`);
       downloadCanvas(canvas, filename);
       toast.success('Brilliant move image downloaded!');
     } catch (error) {
