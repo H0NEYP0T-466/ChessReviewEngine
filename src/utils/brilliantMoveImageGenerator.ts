@@ -171,7 +171,7 @@ async function drawSidePanel(
   roundRect(ctx, paddingX, cardY, cardWidth, cardHeight, 24);
 
   // Move notation in card
-  ctx.fillStyle = classification === 'brilliant' ? '#E5D060' : '#00BFAE';
+  ctx.fillStyle = classification === 'brilliant' ? '#00BFAE' : '#E5D060';
   ctx.font = '700 100px Arial, sans-serif';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
@@ -181,14 +181,14 @@ async function drawSidePanel(
 
   // Add brilliant badge to the bottom-right corner of the card
   if (classification === 'brilliant') {
-    const badgeSize = 60;
-    const badgeX = paddingX + cardWidth - badgeSize - 40;
-    const badgeY = cardY + cardHeight - badgeSize - 40;
+    const badgeSize = 80;
+    const badgeX = paddingX + cardWidth - badgeSize - 1;
+    const badgeY = cardY + cardHeight - badgeSize - 170;
     await drawBrilliantBadgeImage(ctx, badgeX + badgeSize / 2, badgeY + badgeSize / 2, badgeSize / 2);
   }
 
   // Footer branding
-  ctx.fillStyle = '#00BFAE';
+  ctx.fillStyle = '#E5D060';
   ctx.font = '600 32px Arial, sans-serif';
   ctx.fillText('Honeypot.Engine', paddingX, height - 60);
 }
