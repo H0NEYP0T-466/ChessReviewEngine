@@ -33,6 +33,7 @@ export function AnalysisBoard({
   const [position, setPosition] = useState(game.fen());
   const [arrows, setArrows] = useState<Arrow[]>([]);
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
+  const [boardOrientation, setBoardOrientation] = useState<'white' | 'black'>('white');
 
   useEffect(() => {
     const updatePosition = () => {
@@ -169,13 +170,14 @@ export function AnalysisBoard({
               position: position,
               arrows: arrows,
               allowDragging: false,
+              boardOrientation: boardOrientation,
             }}
           />
           {currentMove && (
             <MoveClassificationOverlay
               classification={currentMove.classification}
               targetSquare={getDestinationSquare(currentMove.uci)}
-              boardOrientation="white"
+              boardOrientation={boardOrientation}
             />
           )}
         </div>
@@ -261,7 +263,7 @@ export function AnalysisBoard({
         </div>
       )}
 
-      <div className="flex justify-center gap-2">
+      <div className="flex justify-center items-center gap-2">
         <button
           onClick={handleFirst}
           disabled={currentMoveIndex <= 0}
@@ -293,6 +295,14 @@ export function AnalysisBoard({
                    disabled:cursor-not-allowed rounded-lg transition-colors"
         >
           Last ⏭
+        </button>
+        <div className="w-px h-8 bg-gray-600 mx-2"></div>
+        <button
+          onClick={() => setBoardOrientation(prev => prev === 'white' ? 'black' : 'white')}
+          className="px-4 py-2 bg-blue-700 hover:bg-blue-600 rounded-lg transition-colors"
+          title="Flip Board"
+        >
+          🔄 Flip Board
         </button>
       </div>
 

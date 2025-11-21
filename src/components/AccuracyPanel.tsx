@@ -30,36 +30,33 @@ export function AccuracyPanel({
           </span>
         </div>
         <div className="flex flex-wrap gap-2 text-sm">
-          {whiteSummary.brilliant > 0 && (
-            <span className="bg-purple-600 px-2 py-1 rounded">
-              ✨ {whiteSummary.brilliant} Brilliant
-            </span>
-          )}
-          {whiteSummary.best > 0 && (
-            <span className="bg-green-600 px-2 py-1 rounded">
-              ✓ {whiteSummary.best} Best
-            </span>
-          )}
-          {whiteSummary.excellent > 0 && (
-            <span className="bg-green-500 px-2 py-1 rounded">
-              {whiteSummary.excellent} Excellent
-            </span>
-          )}
-          {whiteSummary.inaccuracies > 0 && (
-            <span className="bg-orange-600 px-2 py-1 rounded">
-              {whiteSummary.inaccuracies} Inaccuracies
-            </span>
-          )}
-          {whiteSummary.mistakes > 0 && (
-            <span className="bg-orange-500 px-2 py-1 rounded">
-              {whiteSummary.mistakes} Mistakes
-            </span>
-          )}
-          {whiteSummary.blunders > 0 && (
-            <span className="bg-red-600 px-2 py-1 rounded">
-              ⚠ {whiteSummary.blunders} Blunders
-            </span>
-          )}
+          <span className="bg-gray-600 px-2 py-1 rounded">
+            Theory: {whiteSummary.theory}
+          </span>
+          <span className="bg-blue-500 px-2 py-1 rounded">
+            Good: {whiteSummary.good}
+          </span>
+          <span className="bg-blue-600 px-2 py-1 rounded">
+            Great: {whiteSummary.great}
+          </span>
+          <span className="bg-green-600 px-2 py-1 rounded">
+            ✓ Best: {whiteSummary.best}
+          </span>
+          <span className="bg-green-500 px-2 py-1 rounded">
+            Excellent: {whiteSummary.excellent}
+          </span>
+          <span className="bg-purple-600 px-2 py-1 rounded">
+            ✨ Brilliant: {whiteSummary.brilliant}
+          </span>
+          <span className="bg-orange-600 px-2 py-1 rounded">
+            Inaccuracies: {whiteSummary.inaccuracies}
+          </span>
+          <span className="bg-orange-500 px-2 py-1 rounded">
+            Mistakes: {whiteSummary.mistakes}
+          </span>
+          <span className="bg-red-600 px-2 py-1 rounded">
+            ⚠ Blunders: {whiteSummary.blunders}
+          </span>
         </div>
       </div>
 
@@ -72,36 +69,33 @@ export function AccuracyPanel({
           </span>
         </div>
         <div className="flex flex-wrap gap-2 text-sm">
-          {blackSummary.brilliant > 0 && (
-            <span className="bg-purple-600 px-2 py-1 rounded">
-              ✨ {blackSummary.brilliant} Brilliant
-            </span>
-          )}
-          {blackSummary.best > 0 && (
-            <span className="bg-green-600 px-2 py-1 rounded">
-              ✓ {blackSummary.best} Best
-            </span>
-          )}
-          {blackSummary.excellent > 0 && (
-            <span className="bg-green-500 px-2 py-1 rounded">
-              {blackSummary.excellent} Excellent
-            </span>
-          )}
-          {blackSummary.inaccuracies > 0 && (
-            <span className="bg-orange-600 px-2 py-1 rounded">
-              {blackSummary.inaccuracies} Inaccuracies
-            </span>
-          )}
-          {blackSummary.mistakes > 0 && (
-            <span className="bg-orange-500 px-2 py-1 rounded">
-              {blackSummary.mistakes} Mistakes
-            </span>
-          )}
-          {blackSummary.blunders > 0 && (
-            <span className="bg-red-600 px-2 py-1 rounded">
-              ⚠ {blackSummary.blunders} Blunders
-            </span>
-          )}
+          <span className="bg-gray-600 px-2 py-1 rounded">
+            Theory: {blackSummary.theory}
+          </span>
+          <span className="bg-blue-500 px-2 py-1 rounded">
+            Good: {blackSummary.good}
+          </span>
+          <span className="bg-blue-600 px-2 py-1 rounded">
+            Great: {blackSummary.great}
+          </span>
+          <span className="bg-green-600 px-2 py-1 rounded">
+            ✓ Best: {blackSummary.best}
+          </span>
+          <span className="bg-green-500 px-2 py-1 rounded">
+            Excellent: {blackSummary.excellent}
+          </span>
+          <span className="bg-purple-600 px-2 py-1 rounded">
+            ✨ Brilliant: {blackSummary.brilliant}
+          </span>
+          <span className="bg-orange-600 px-2 py-1 rounded">
+            Inaccuracies: {blackSummary.inaccuracies}
+          </span>
+          <span className="bg-orange-500 px-2 py-1 rounded">
+            Mistakes: {blackSummary.mistakes}
+          </span>
+          <span className="bg-red-600 px-2 py-1 rounded">
+            ⚠ Blunders: {blackSummary.blunders}
+          </span>
         </div>
       </div>
     </div>
