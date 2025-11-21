@@ -34,6 +34,7 @@ export function AnalysisBoard({
   const [arrows, setArrows] = useState<Arrow[]>([]);
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
   const [boardOrientation, setBoardOrientation] = useState<'white' | 'black'>('white');
+  const [hideOverlay, setHideOverlay] = useState(false); // NEW: State to hide overlay during capture
   
   // Ref to the board container for screenshot
   const boardContainerRef = useRef<HTMLDivElement>(null);
@@ -125,6 +126,13 @@ export function AnalysisBoard({
     setIsGeneratingImage(true);
     try {
       const playerName = currentMove.side === 'white' ? whitePlayer : blackPlayer;
+      const destSquare = getDestinationSquare(currentMove.uci);
+      
+      // Hide overlay before capturing
+      setHideOverlay(true);
+      
+      // Wait a bit for the overlay to hide
+      await new Promise(resolve => setTimeout(resolve, 100));
       
       // Capture the board element and create image with side panel
       const canvas = await createBrilliantMoveImage({
@@ -132,7 +140,12 @@ export function AnalysisBoard({
         username: playerName,
         moveNotation: currentMove.san,
         classification: currentMove.classification,
+        destSquare: destSquare, // NEW: Pass destination square
+        boardOrientation: boardOrientation, // NEW: Pass board orientation
       });
+      
+      // Show overlay again
+      setHideOverlay(false);
       
       const filename = sanitizeFilename(`brilliant_move_${playerName}_${currentMove.san}.png`);
       downloadCanvas(canvas, filename);
@@ -140,6 +153,7 @@ export function AnalysisBoard({
     } catch (error) {
       console.error('Failed to generate brilliant move image:', error);
       toast.error('Failed to generate image');
+      setHideOverlay(false); // Make sure to show overlay again on error
     } finally {
       setIsGeneratingImage(false);
     }
@@ -186,7 +200,7 @@ export function AnalysisBoard({
               boardOrientation: boardOrientation,
             }}
           />
-          {currentMove && (
+          {currentMove && !hideOverlay && ( // NEW: Only show overlay when not generating image
             <MoveClassificationOverlay
               classification={currentMove.classification}
               targetSquare={getDestinationSquare(currentMove.uci)}

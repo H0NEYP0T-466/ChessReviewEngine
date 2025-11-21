@@ -1,10 +1,13 @@
 import html2canvas from 'html2canvas';
+import brilliantBadge from '../assets/brillant.png';
 
 export interface BrilliantMoveImageOptions {
   boardElement: HTMLElement;
   username: string;
   moveNotation: string;
   classification?: string;
+  destSquare?: string; // NEW: Destination square for badge placement
+  boardOrientation?: 'white' | 'black'; // NEW: Board orientation
 }
 
 /**
@@ -15,6 +18,8 @@ export async function createBrilliantMoveImage({
   username,
   moveNotation,
   classification = 'brilliant',
+  destSquare,
+  boardOrientation = 'white',
 }: BrilliantMoveImageOptions): Promise<HTMLCanvasElement> {
   // Capture the board element as canvas
   const boardCanvas = await html2canvas(boardElement, {
@@ -34,7 +39,7 @@ export async function createBrilliantMoveImage({
   finalCanvas.width = totalWidth;
   finalCanvas.height = totalHeight;
   const ctx = finalCanvas.getContext('2d');
-  
+
   if (!ctx) throw new Error('Failed to get canvas context');
 
   // Background
@@ -44,10 +49,81 @@ export async function createBrilliantMoveImage({
   // Draw the captured board
   ctx.drawImage(boardCanvas, 0, 0);
 
+  // Draw brilliant badge on the board at destination square
+  if (classification === 'brilliant' && destSquare) {
+    await drawBadgeOnBoard(ctx, destSquare, boardWidth, boardHeight, boardOrientation);
+  }
+
   // Draw side panel
   await drawSidePanel(ctx, boardWidth, panelWidth, totalHeight, username, moveNotation, classification);
 
   return finalCanvas;
+}
+
+/**
+ * Draw badge on the chessboard at the correct square position
+ */
+async function drawBadgeOnBoard(
+  ctx: CanvasRenderingContext2D,
+  square: string,
+  boardWidth: number,
+  boardHeight: number,
+  orientation: 'white' | 'black'
+): Promise<void> {
+  if (square.length !== 2) return;
+
+  const file = square.charCodeAt(0) - 'a'.charCodeAt(0); // 0-7
+  const rank = parseInt(square[1], 10) - 1; // 0-7
+
+  // Calculate square position based on orientation
+  const squareSize = boardWidth / 8;
+  let displayFile: number;
+  let displayRank: number;
+
+  if (orientation === 'white') {
+    displayFile = file;
+    displayRank = 7 - rank;
+  } else {
+    displayFile = 7 - file;
+    displayRank = rank;
+  }
+
+  const squareX = displayFile * squareSize;
+  const squareY = displayRank * squareSize;
+
+  // Position badge in top-right corner of the square
+  const badgeSize = squareSize * 0.45; // 35% of square size - adjust this to your preference
+  const badgeX = squareX + squareSize - badgeSize - (squareSize * -0.2); // 5% padding from right
+  const badgeY = squareY + (squareSize * -0.2); // 5% padding from top
+
+  await drawBrilliantBadgeImage(ctx, badgeX + badgeSize / 2, badgeY + badgeSize / 2, badgeSize / 2);
+}
+
+/**
+ * Draw the brilliant badge icon
+ */
+async function drawBrilliantBadgeImage(
+  ctx: CanvasRenderingContext2D,
+  cx: number,
+  cy: number,
+  r: number
+): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      ctx.save();
+      const size = r * 2;
+      // Draw with explicit width and height to maintain aspect ratio
+      ctx.drawImage(img, cx - r, cy - r, size, size);
+      ctx.restore();
+      resolve();
+    };
+    img.onerror = (error) => {
+      console.error('Failed to load brilliant badge:', error);
+      resolve();
+    };
+    img.src = brilliantBadge;
+  });
 }
 
 /**
@@ -90,17 +166,26 @@ async function drawSidePanel(
   cursorY += 70;
   const cardWidth = panelWidth - 80;
   const cardHeight = 240;
+  const cardY = cursorY;
   ctx.fillStyle = '#1F1E1D';
-  roundRect(ctx, paddingX, cursorY, cardWidth, cardHeight, 24);
+  roundRect(ctx, paddingX, cardY, cardWidth, cardHeight, 24);
 
   // Move notation in card
   ctx.fillStyle = classification === 'brilliant' ? '#E5D060' : '#00BFAE';
   ctx.font = '700 100px Arial, sans-serif';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.fillText(moveNotation, paddingX + cardWidth / 2, cursorY + cardHeight / 2);
+  ctx.fillText(moveNotation, paddingX + cardWidth / 2, cardY + cardHeight / 2);
   ctx.textAlign = 'start';
   ctx.textBaseline = 'alphabetic';
+
+  // Add brilliant badge to the bottom-right corner of the card
+  if (classification === 'brilliant') {
+    const badgeSize = 60;
+    const badgeX = paddingX + cardWidth - badgeSize - 40;
+    const badgeY = cardY + cardHeight - badgeSize - 40;
+    await drawBrilliantBadgeImage(ctx, badgeX + badgeSize / 2, badgeY + badgeSize / 2, badgeSize / 2);
+  }
 
   // Footer branding
   ctx.fillStyle = '#00BFAE';
