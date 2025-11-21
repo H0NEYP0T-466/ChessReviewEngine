@@ -4,6 +4,7 @@
  */
 
 import { Chess } from 'chess.js';
+import brilliantBadge from '../assets/brillant.png';
 
 export interface BrilliantMoveImageOptions {
   fen: string;
@@ -18,11 +19,64 @@ interface CanvasPosition {
 }
 
 /**
- * Unicode chess piece symbols mapping.
+ * Chess piece rendering constants.
  */
-const CHESS_PIECES: Record<string, string> = {
-  'wP': '♙', 'wN': '♘', 'wB': '♗', 'wR': '♖', 'wQ': '♕', 'wK': '♔',
-  'bP': '♟', 'bN': '♞', 'bB': '♝', 'bR': '♜', 'bQ': '♛', 'bK': '♚',
+const PIECE_SIZE_RATIO = 0.9; // Pieces are rendered at 90% of square size
+const PIECE_STROKE_WIDTH = 1.5; // SVG stroke width for piece outlines
+
+/**
+ * SVG chess piece paths for rendering on canvas.
+ * These are standard Wikimedia Commons chess piece SVG paths.
+ */
+const CHESS_PIECE_PATHS: Record<string, { path: string; viewBox: string }> = {
+  'wP': {
+    viewBox: '0 0 45 45',
+    path: 'm 22.5,9 c -2.21,0 -4,1.79 -4,4 0,0.89 0.29,1.71 0.78,2.38 C 17.33,16.5 16,18.59 16,21 c 0,2.03 0.94,3.84 2.41,5.03 C 15.41,27.09 11,31.58 11,39.5 H 34 C 34,31.58 29.59,27.09 26.59,26.03 28.06,24.84 29,23.03 29,21 29,18.59 27.67,16.5 25.72,15.38 26.21,14.71 26.5,13.89 26.5,13 c 0,-2.21 -1.79,-4 -4,-4 z'
+  },
+  'wR': {
+    viewBox: '0 0 45 45',
+    path: 'M 9,39 L 36,39 L 36,36 L 9,36 L 9,39 z M 12.5,32 L 14,29.5 L 31,29.5 L 32.5,32 L 12.5,32 z M 12,36 L 12,32 L 33,32 L 33,36 L 12,36 z M 14,29.5 L 14,16.5 L 31,16.5 L 31,29.5 L 14,29.5 z M 14,16.5 L 11,14 L 34,14 L 31,16.5 L 14,16.5 z M 11,14 L 11,9 L 15,9 L 15,11 L 20,11 L 20,9 L 25,9 L 25,11 L 30,11 L 30,9 L 34,9 L 34,14 L 11,14 z'
+  },
+  'wN': {
+    viewBox: '0 0 45 45',
+    path: 'M 22,10 C 32.5,11 38.5,18 38,39 L 15,39 C 15,30 25,32.5 23,18 C 23,18 23,13 22,10 z M 24,18 C 24.38,20.91 18.45,25.37 16,27 C 13,29 13.18,31.34 11,31 C 9.958,30.06 12.41,27.96 11,28 C 10,28 11.19,29.23 10,30 C 9,30 5.997,31 6,26 C 6,24 12,14 12,14 C 12,14 13.89,12.1 14,10.5 C 13.27,9.506 13.5,8.5 13.5,7.5 C 14.5,6.5 16.5,10 16.5,10 L 18.5,10 C 18.5,10 19.28,8.008 21,7 C 22,7 22,10 22,10 z'
+  },
+  'wB': {
+    viewBox: '0 0 45 45',
+    path: 'm 9,36 c 3.39,-0.97 10.11,0.43 13.5,-2 3.39,2.43 10.11,1.03 13.5,2 0,0 1.65,0.54 3,2 -0.68,0.97 -1.65,0.99 -3,0.5 -3.39,-0.97 -10.11,0.46 -13.5,-1 -3.39,1.46 -10.11,0.03 -13.5,1 -1.354,0.49 -2.323,0.47 -3,-0.5 1.354,-1.94 3,-2 3,-2 z m 15,-30 c 2,2.5 3,12.5 3,12.5 0,0 -2,1 -3,1 -1,0 -3,-1 -3,-1 0,0 1,-10 3,-12.5 z m -7.5,11.5 c 1.5,0 4,2 4,2 0,0 -1.5,2 -1.5,3.5 0,1.5 1.5,3.5 1.5,3.5 0,0 -2.5,2 -4,2 -1.5,0 -4,-2 -4,-2 0,0 1.5,-2 1.5,-3.5 0,-1.5 -1.5,-3.5 -1.5,-3.5 0,0 2.5,-2 4,-2 z m 15,0 c -1.5,0 -4,2 -4,2 0,0 1.5,2 1.5,3.5 0,1.5 -1.5,3.5 -1.5,3.5 0,0 2.5,2 4,2 1.5,0 4,-2 4,-2 0,0 -1.5,-2 -1.5,-3.5 0,-1.5 1.5,-3.5 1.5,-3.5 0,0 -2.5,-2 -4,-2 z'
+  },
+  'wQ': {
+    viewBox: '0 0 45 45',
+    path: 'M 9,26 C 17.5,24.5 30,24.5 36,26 L 38.5,13.5 L 31,25 L 30.7,10.9 L 25.5,24.5 L 22.5,10 L 19.5,24.5 L 14.3,10.9 L 14,25 L 6.5,13.5 L 9,26 z M 9,26 C 9,28 10.5,28 11.5,30 C 12.5,31.5 12.5,31 12,33.5 C 10.5,34.5 11,36 11,36 C 9.5,37.5 11,38.5 11,38.5 C 17.5,39.5 27.5,39.5 34,38.5 C 34,38.5 35.5,37.5 34,36 C 34,36 34.5,34.5 33,33.5 C 32.5,31 32.5,31.5 33.5,30 C 34.5,28 36,28 36,26 C 30,24.5 17.5,24.5 9,26 z'
+  },
+  'wK': {
+    viewBox: '0 0 45 45',
+    path: 'M 22.5,11.63 L 22.5,6 M 20,8 L 25,8 M 22.5,25 C 22.5,25 27,17.5 25.5,14.5 C 25.5,14.5 24.5,12 22.5,12 C 20.5,12 19.5,14.5 19.5,14.5 C 18,17.5 22.5,25 22.5,25 M 12.5,37 C 18,40.5 27,40.5 32.5,37 L 32.5,30 C 32.5,30 41.5,25.5 38.5,19.5 C 34.5,13 25,16 22.5,23.5 L 22.5,27 L 22.5,23.5 C 20,16 10.5,13 6.5,19.5 C 3.5,25.5 12.5,30 12.5,30 L 12.5,37 z'
+  },
+  'bP': {
+    viewBox: '0 0 45 45',
+    path: 'm 22.5,9 c -2.21,0 -4,1.79 -4,4 0,0.89 0.29,1.71 0.78,2.38 C 17.33,16.5 16,18.59 16,21 c 0,2.03 0.94,3.84 2.41,5.03 C 15.41,27.09 11,31.58 11,39.5 H 34 C 34,31.58 29.59,27.09 26.59,26.03 28.06,24.84 29,23.03 29,21 29,18.59 27.67,16.5 25.72,15.38 26.21,14.71 26.5,13.89 26.5,13 c 0,-2.21 -1.79,-4 -4,-4 z'
+  },
+  'bR': {
+    viewBox: '0 0 45 45',
+    path: 'M 9,39 L 36,39 L 36,36 L 9,36 L 9,39 z M 12.5,32 L 14,29.5 L 31,29.5 L 32.5,32 L 12.5,32 z M 12,36 L 12,32 L 33,32 L 33,36 L 12,36 z M 14,29.5 L 14,16.5 L 31,16.5 L 31,29.5 L 14,29.5 z M 14,16.5 L 11,14 L 34,14 L 31,16.5 L 14,16.5 z M 11,14 L 11,9 L 15,9 L 15,11 L 20,11 L 20,9 L 25,9 L 25,11 L 30,11 L 30,9 L 34,9 L 34,14 L 11,14 z'
+  },
+  'bN': {
+    viewBox: '0 0 45 45',
+    path: 'M 22,10 C 32.5,11 38.5,18 38,39 L 15,39 C 15,30 25,32.5 23,18 C 23,18 23,13 22,10 z M 24,18 C 24.38,20.91 18.45,25.37 16,27 C 13,29 13.18,31.34 11,31 C 9.958,30.06 12.41,27.96 11,28 C 10,28 11.19,29.23 10,30 C 9,30 5.997,31 6,26 C 6,24 12,14 12,14 C 12,14 13.89,12.1 14,10.5 C 13.27,9.506 13.5,8.5 13.5,7.5 C 14.5,6.5 16.5,10 16.5,10 L 18.5,10 C 18.5,10 19.28,8.008 21,7 C 22,7 22,10 22,10 z'
+  },
+  'bB': {
+    viewBox: '0 0 45 45',
+    path: 'm 9,36 c 3.39,-0.97 10.11,0.43 13.5,-2 3.39,2.43 10.11,1.03 13.5,2 0,0 1.65,0.54 3,2 -0.68,0.97 -1.65,0.99 -3,0.5 -3.39,-0.97 -10.11,0.46 -13.5,-1 -3.39,1.46 -10.11,0.03 -13.5,1 -1.354,0.49 -2.323,0.47 -3,-0.5 1.354,-1.94 3,-2 3,-2 z m 15,-30 c 2,2.5 3,12.5 3,12.5 0,0 -2,1 -3,1 -1,0 -3,-1 -3,-1 0,0 1,-10 3,-12.5 z m -7.5,11.5 c 1.5,0 4,2 4,2 0,0 -1.5,2 -1.5,3.5 0,1.5 1.5,3.5 1.5,3.5 0,0 -2.5,2 -4,2 -1.5,0 -4,-2 -4,-2 0,0 1.5,-2 1.5,-3.5 0,-1.5 -1.5,-3.5 -1.5,-3.5 0,0 2.5,-2 4,-2 z m 15,0 c -1.5,0 -4,2 -4,2 0,0 1.5,2 1.5,3.5 0,1.5 -1.5,3.5 -1.5,3.5 0,0 2.5,2 4,2 1.5,0 4,-2 4,-2 0,0 -1.5,-2 -1.5,-3.5 0,-1.5 1.5,-3.5 1.5,-3.5 0,0 -2.5,-2 -4,-2 z'
+  },
+  'bQ': {
+    viewBox: '0 0 45 45',
+    path: 'M 9,26 C 17.5,24.5 30,24.5 36,26 L 38.5,13.5 L 31,25 L 30.7,10.9 L 25.5,24.5 L 22.5,10 L 19.5,24.5 L 14.3,10.9 L 14,25 L 6.5,13.5 L 9,26 z M 9,26 C 9,28 10.5,28 11.5,30 C 12.5,31.5 12.5,31 12,33.5 C 10.5,34.5 11,36 11,36 C 9.5,37.5 11,38.5 11,38.5 C 17.5,39.5 27.5,39.5 34,38.5 C 34,38.5 35.5,37.5 34,36 C 34,36 34.5,34.5 33,33.5 C 32.5,31 32.5,31.5 33.5,30 C 34.5,28 36,28 36,26 C 30,24.5 17.5,24.5 9,26 z'
+  },
+  'bK': {
+    viewBox: '0 0 45 45',
+    path: 'M 22.5,11.63 L 22.5,6 M 20,8 L 25,8 M 22.5,25 C 22.5,25 27,17.5 25.5,14.5 C 25.5,14.5 24.5,12 22.5,12 C 20.5,12 19.5,14.5 19.5,14.5 C 18,17.5 22.5,25 22.5,25 M 12.5,37 C 18,40.5 27,40.5 32.5,37 L 32.5,30 C 32.5,30 41.5,25.5 38.5,19.5 C 34.5,13 25,16 22.5,23.5 L 22.5,27 L 22.5,23.5 C 20,16 10.5,13 6.5,19.5 C 3.5,25.5 12.5,30 12.5,30 L 12.5,37 z'
+  },
 };
 
 /**
@@ -101,14 +155,6 @@ export async function createBrilliantMoveImage({
     });
   });
 
-  // "!!" badge on board if dest square
-  if (destSquare) {
-    const pos = squareToPixels(destSquare, squareSize);
-    const cx = pos.left + squareSize * 0.75;
-    const cy = pos.top + squareSize * 0.25;
-    drawExclaimBadge(ctx, cx, cy, squareSize * 0.28);
-  }
-
   // Side panel
   const panelX = boardW;
   ctx.fillStyle = '#242322';
@@ -150,13 +196,27 @@ export async function createBrilliantMoveImage({
   ctx.textAlign = 'start';
   ctx.textBaseline = 'alphabetic';
 
-  // Second badge bottom-right of card
-  drawExclaimBadge(ctx, paddingX + cardW - 40, cardY + cardH - 40, 30);
-
   // Optional footer brand
   ctx.fillStyle = '#00BFAE';
   ctx.font = '600 26px Arial, sans-serif';
   ctx.fillText('Chess.com', paddingX, height - 42);
+
+  // Draw brilliant badges using the actual image from assets (await these to complete)
+  const badgePromises: Promise<void>[] = [];
+  
+  // Badge on board if dest square
+  if (destSquare) {
+    const pos = squareToPixels(destSquare, squareSize);
+    const cx = pos.left + squareSize * 0.75;
+    const cy = pos.top + squareSize * 0.25;
+    badgePromises.push(drawBrilliantBadge(ctx, cx, cy, squareSize * 0.28));
+  }
+
+  // Second badge bottom-right of card
+  badgePromises.push(drawBrilliantBadge(ctx, paddingX + cardW - 40, cardY + cardH - 40, 30));
+
+  // Wait for all badges to be drawn
+  await Promise.all(badgePromises);
 
   return canvas;
 }
@@ -179,7 +239,7 @@ function squareToPixels(square: string, squareSize: number): CanvasPosition {
 }
 
 /**
- * Draw piece or fallback letter.
+ * Draw chess piece using SVG path on canvas.
  */
 function drawPiece(
   ctx: CanvasRenderingContext2D,
@@ -192,39 +252,61 @@ function drawPiece(
   ctx.save();
   
   const key = (color === 'w' ? 'w' : 'b') + type.toUpperCase();
-  const piece = CHESS_PIECES[key];
+  const pieceData = CHESS_PIECE_PATHS[key];
   
-  if (piece) {
+  if (pieceData) {
+    // Parse viewBox to get original dimensions
+    const viewBoxParts = pieceData.viewBox.split(' ');
+    const vbWidth = parseFloat(viewBoxParts[2]);
+    const vbHeight = parseFloat(viewBoxParts[3]);
+    
+    // Calculate scale and position to center piece in square
+    const scale = (size * PIECE_SIZE_RATIO) / Math.max(vbWidth, vbHeight);
+    const offsetX = x + (size - vbWidth * scale) / 2;
+    const offsetY = y + (size - vbHeight * scale) / 2;
+    
+    // Apply transformation
+    ctx.translate(offsetX, offsetY);
+    ctx.scale(scale, scale);
+    
+    // Create path and draw
+    const path = new Path2D(pieceData.path);
+    
+    // Fill with piece color
     ctx.fillStyle = color === 'w' ? '#FFFFFF' : '#000000';
-    ctx.font = `bold ${size * 0.75}px Arial, sans-serif`;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(piece, x + size / 2, y + size / 2);
+    ctx.fill(path);
+    
+    // Stroke outline
+    ctx.strokeStyle = color === 'w' ? '#000000' : '#FFFFFF';
+    ctx.lineWidth = PIECE_STROKE_WIDTH / scale;
+    ctx.stroke(path);
   }
   
   ctx.restore();
 }
 
 /**
- * Draw turquoise !! badge.
+ * Draw brilliant badge using the actual brilliant.png image from assets.
  */
-function drawExclaimBadge(
+async function drawBrilliantBadge(
   ctx: CanvasRenderingContext2D,
   cx: number,
   cy: number,
   r: number
-): void {
-  ctx.save();
-  ctx.fillStyle = '#00BFAE';
-  ctx.beginPath();
-  ctx.arc(cx, cy, r, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.fillStyle = '#FFFFFF';
-  ctx.font = `700 ${r * 1.1}px Arial, sans-serif`;
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.fillText('!!', cx, cy);
-  ctx.restore();
+): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      ctx.save();
+      // Draw image centered at (cx, cy) with diameter of 2*r
+      const size = r * 2;
+      ctx.drawImage(img, cx - r, cy - r, size, size);
+      ctx.restore();
+      resolve();
+    };
+    img.onerror = reject;
+    img.src = brilliantBadge;
+  });
 }
 
 /**
