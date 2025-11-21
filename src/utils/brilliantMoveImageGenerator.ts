@@ -1,7 +1,3 @@
-/**
- * Utility for generating brilliant move image cards.
- * Creates a shareable image combining the chessboard and game review panel.
- */
 
 import { Chess } from 'chess.js';
 import brilliantBadge from '../assets/brillant.png';
