@@ -89,6 +89,8 @@ function AppContent() {
                 moves={gameAnalysis.moves}
                 currentMoveIndex={currentMoveIndex}
                 onMoveIndexChange={setCurrentMoveIndex}
+                whitePlayer={gameAnalysis.headers.White}
+                blackPlayer={gameAnalysis.headers.Black}
               />
               
               <AccuracyPanel
