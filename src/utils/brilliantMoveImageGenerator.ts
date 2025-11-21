@@ -118,16 +118,18 @@ export async function createBrilliantMoveImage({
     return canvas;
   }
 
-  // Determine destination square from UCI notation
+  // Determine origin and destination squares from UCI notation
+  let originSquare: string | null = null;
   let destSquare: string | null = null;
   if (uci && uci.length >= 4) {
-    // Extract destination square from UCI (e.g., "e2e4" -> "e4")
+    // Extract origin and destination squares from UCI (e.g., "e2e4" -> "e2", "e4")
+    originSquare = uci.substring(0, 2);
     destSquare = uci.substring(2, 4);
   }
 
-  // Draw board
-  const light = '#EEEED2';
-  const dark = '#769656';
+  // Draw board - using wooden theme matching react-chessboard defaults
+  const light = '#F0D9B5'; // Light wooden/beige
+  const dark = '#B58863';  // Dark wooden/brown
   for (let r = 0; r < 8; r++) {
     for (let c = 0; c < 8; c++) {
       const isDark = (r + c) % 2 === 1;
@@ -136,10 +138,16 @@ export async function createBrilliantMoveImage({
     }
   }
 
-  // Highlight destination square if any
+  // Highlight origin and destination squares with vibrant yellow-gold overlay
+  const highlightColor = 'rgba(229, 208, 96, 0.65)';
+  if (originSquare) {
+    const pos = squareToPixels(originSquare, squareSize);
+    ctx.fillStyle = highlightColor;
+    ctx.fillRect(pos.left, pos.top, squareSize, squareSize);
+  }
   if (destSquare) {
     const pos = squareToPixels(destSquare, squareSize);
-    ctx.fillStyle = 'rgba(229, 208, 96, 0.65)';
+    ctx.fillStyle = highlightColor;
     ctx.fillRect(pos.left, pos.top, squareSize, squareSize);
   }
 
@@ -239,7 +247,9 @@ function squareToPixels(square: string, squareSize: number): CanvasPosition {
 }
 
 /**
- * Draw chess piece using SVG path on canvas.
+ * Draw chess piece using SVG path on canvas with glossy styling.
+ * Matches the react-chessboard piece appearance.
+ * White pieces receive subtle shadow effects for additional depth.
  */
 function drawPiece(
   ctx: CanvasRenderingContext2D,
@@ -272,14 +282,34 @@ function drawPiece(
     // Create path and draw
     const path = new Path2D(pieceData.path);
     
-    // Fill with piece color
+    // Fill with piece color - white pieces are white, black pieces are black
     ctx.fillStyle = color === 'w' ? '#FFFFFF' : '#000000';
     ctx.fill(path);
     
-    // Stroke outline
-    ctx.strokeStyle = color === 'w' ? '#000000' : '#FFFFFF';
+    // Stroke outline for definition
+    ctx.strokeStyle = '#000000';
     ctx.lineWidth = PIECE_STROKE_WIDTH / scale;
+    ctx.lineJoin = 'round';
+    ctx.lineCap = 'round';
     ctx.stroke(path);
+    
+    // Add subtle shadow/depth for glossy effect on white pieces only
+    if (color === 'w') {
+      // Apply shadow properties for depth effect
+      ctx.globalAlpha = 0.15;
+      ctx.shadowColor = 'rgba(0, 0, 0, 0.3)';
+      ctx.shadowBlur = 2 / scale;
+      ctx.shadowOffsetX = 1 / scale;
+      ctx.shadowOffsetY = 1 / scale;
+      ctx.stroke(path);
+      
+      // Reset context properties to prevent affecting subsequent draws
+      ctx.globalAlpha = 1.0;
+      ctx.shadowColor = 'transparent';
+      ctx.shadowBlur = 0;
+      ctx.shadowOffsetX = 0;
+      ctx.shadowOffsetY = 0;
+    }
   }
   
   ctx.restore();
