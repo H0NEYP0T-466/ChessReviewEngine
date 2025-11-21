@@ -67,7 +67,7 @@ async function drawBadgeOnBoard(
   ctx: CanvasRenderingContext2D,
   square: string,
   boardWidth: number,
-  boardHeight: number,
+  _boardHeight: number, // Prefixed with underscore to indicate intentionally unused
   orientation: 'white' | 'black'
 ): Promise<void> {
   if (square.length !== 2) return;
@@ -108,7 +108,7 @@ async function drawBrilliantBadgeImage(
   cy: number,
   r: number
 ): Promise<void> {
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve) => {
     const img = new Image();
     img.onload = () => {
       ctx.save();
@@ -159,7 +159,6 @@ async function drawSidePanel(
 
   // Determine Colors based on classification
   const accentColor = getClassificationColor(classification);
-  const textColor = '#FFFFFF';
   const subTextColor = '#AAAAAA';
 
   let cursorY = height * 0.08; // Start 8% down (increased top padding)
