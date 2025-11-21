@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster, toast } from 'react-hot-toast';
-import { PGNUpload } from './components/PGNUpload';
+import { PGNUpload } from './components/LandingPage';
 import { AnalysisBoard } from './components/AnalysisBoard';
 import { MoveList } from './components/MoveList';
 import { AccuracyPanel } from './components/AccuracyPanel';

@@ -12,7 +12,6 @@ from ..utils.logging import logger
 
 analysis_storage: dict[str, GameAnalysisResult] = {}
 
-
 def is_opening_phase(board: chess.Board, move_number: int, move: chess.Move, eval_diff_cp: int = 0) -> bool:
     """
     Intelligent opening phase detection.
