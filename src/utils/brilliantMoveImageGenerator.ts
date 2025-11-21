@@ -295,7 +295,7 @@ function drawPiece(
     
     // Add subtle shadow/depth for glossy effect on white pieces only
     if (color === 'w') {
-      // Save current context state before applying shadow
+      // Apply shadow properties for depth effect
       ctx.globalAlpha = 0.15;
       ctx.shadowColor = 'rgba(0, 0, 0, 0.3)';
       ctx.shadowBlur = 2 / scale;
