@@ -19,6 +19,12 @@ interface CanvasPosition {
 }
 
 /**
+ * Chess piece rendering constants.
+ */
+const PIECE_SIZE_RATIO = 0.9; // Pieces are rendered at 90% of square size
+const PIECE_STROKE_WIDTH = 1.5; // SVG stroke width for piece outlines
+
+/**
  * SVG chess piece paths for rendering on canvas.
  * These are standard Wikimedia Commons chess piece SVG paths.
  */
@@ -255,7 +261,7 @@ function drawPiece(
     const vbHeight = parseFloat(viewBoxParts[3]);
     
     // Calculate scale and position to center piece in square
-    const scale = (size * 0.9) / Math.max(vbWidth, vbHeight);
+    const scale = (size * PIECE_SIZE_RATIO) / Math.max(vbWidth, vbHeight);
     const offsetX = x + (size - vbWidth * scale) / 2;
     const offsetY = y + (size - vbHeight * scale) / 2;
     
@@ -272,7 +278,7 @@ function drawPiece(
     
     // Stroke outline
     ctx.strokeStyle = color === 'w' ? '#000000' : '#FFFFFF';
-    ctx.lineWidth = 1.5 / scale;
+    ctx.lineWidth = PIECE_STROKE_WIDTH / scale;
     ctx.stroke(path);
   }
   
