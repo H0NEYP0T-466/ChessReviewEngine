@@ -249,6 +249,7 @@ function squareToPixels(square: string, squareSize: number): CanvasPosition {
 /**
  * Draw chess piece using SVG path on canvas with glossy styling.
  * Matches the react-chessboard piece appearance.
+ * White pieces receive subtle shadow effects for additional depth.
  */
 function drawPiece(
   ctx: CanvasRenderingContext2D,
@@ -292,15 +293,22 @@ function drawPiece(
     ctx.lineCap = 'round';
     ctx.stroke(path);
     
-    // Add subtle shadow/depth for glossy effect
+    // Add subtle shadow/depth for glossy effect on white pieces only
     if (color === 'w') {
-      // For white pieces, add a subtle inner shadow
+      // Save current context state before applying shadow
       ctx.globalAlpha = 0.15;
       ctx.shadowColor = 'rgba(0, 0, 0, 0.3)';
       ctx.shadowBlur = 2 / scale;
       ctx.shadowOffsetX = 1 / scale;
       ctx.shadowOffsetY = 1 / scale;
       ctx.stroke(path);
+      
+      // Reset context properties to prevent affecting subsequent draws
+      ctx.globalAlpha = 1.0;
+      ctx.shadowColor = 'transparent';
+      ctx.shadowBlur = 0;
+      ctx.shadowOffsetX = 0;
+      ctx.shadowOffsetY = 0;
     }
   }
   
