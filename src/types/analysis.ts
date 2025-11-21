@@ -53,6 +53,7 @@ export interface PlayerSummary {
   excellent: number;
   great: number;
   good: number;
+  theory: number;
 }
 
 export interface GameSummary {
