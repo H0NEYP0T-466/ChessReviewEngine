@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Chessboard } from 'react-chessboard';
 import { Chess } from 'chess.js';
 import { toast } from 'react-hot-toast';
@@ -34,6 +34,9 @@ export function AnalysisBoard({
   const [arrows, setArrows] = useState<Arrow[]>([]);
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
   const [boardOrientation, setBoardOrientation] = useState<'white' | 'black'>('white');
+  
+  // Ref to the board container for screenshot
+  const boardContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const updatePosition = () => {
@@ -114,14 +117,21 @@ export function AnalysisBoard({
       return;
     }
 
+    if (!boardContainerRef.current) {
+      toast.error('Board not ready');
+      return;
+    }
+
     setIsGeneratingImage(true);
     try {
       const playerName = currentMove.side === 'white' ? whitePlayer : blackPlayer;
+      
+      // Capture the board element and create image with side panel
       const canvas = await createBrilliantMoveImage({
-        fen: position,
+        boardElement: boardContainerRef.current,
         username: playerName,
         moveNotation: currentMove.san,
-        uci: currentMove.uci,
+        classification: currentMove.classification,
       });
       
       const filename = sanitizeFilename(`brilliant_move_${playerName}_${currentMove.san}.png`);
@@ -163,7 +173,10 @@ export function AnalysisBoard({
           height="500px"
         />
         
-        <div className="flex-1 max-w-[500px] relative">
+        <div 
+          ref={boardContainerRef}
+          className="flex-1 max-w-[500px] relative"
+        >
           <Chessboard
             options={{
               id: 'analysis-board',

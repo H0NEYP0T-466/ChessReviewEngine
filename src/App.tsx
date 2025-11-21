@@ -31,11 +31,11 @@ function AppContent() {
       setIsAnalyzing(true);
       setAnalysisProgress(0);
       setGameAnalysis(null);
-      
+
       const response = await startAnalysis({ pgn });
-      
+
       toast.success(`Analysis started! Total moves: ${response.total_moves}`);
-      
+
       const websocket = createWebSocket(
         response.task_id,
         (update: StreamingUpdate) => {
@@ -64,9 +64,9 @@ function AppContent() {
           console.log('WebSocket connection closed');
         }
       );
-      
+
       setWs(websocket);
-      
+
     } catch (error) {
       setIsAnalyzing(false);
       const errorMessage = error instanceof Error ? error.message : 'Failed to analyze game';
@@ -92,7 +92,7 @@ function AppContent() {
                 whitePlayer={gameAnalysis.headers.White}
                 blackPlayer={gameAnalysis.headers.Black}
               />
-              
+
               <AccuracyPanel
                 whiteSummary={gameAnalysis.summary.white}
                 blackSummary={gameAnalysis.summary.black}
