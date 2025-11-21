@@ -6,8 +6,8 @@ export interface BrilliantMoveImageOptions {
   username: string;
   moveNotation: string;
   classification?: string;
-  destSquare?: string; // NEW: Destination square for badge placement
-  boardOrientation?: 'white' | 'black'; // NEW: Board orientation
+  destSquare?: string;
+  boardOrientation?: 'white' | 'black';
 }
 
 /**
@@ -92,9 +92,9 @@ async function drawBadgeOnBoard(
   const squareY = displayRank * squareSize;
 
   // Position badge in top-right corner of the square
-  const badgeSize = squareSize * 0.45; // 35% of square size - adjust this to your preference
-  const badgeX = squareX + squareSize - badgeSize - (squareSize * -0.2); // 5% padding from right
-  const badgeY = squareY + (squareSize * -0.2); // 5% padding from top
+  const badgeSize = squareSize * 0.45; // 45% of square size
+  const badgeX = squareX + squareSize - badgeSize - (squareSize * -0.2); // Position adjustment
+  const badgeY = squareY + (squareSize * -0.2); // Position adjustment
 
   await drawBrilliantBadgeImage(ctx, badgeX + badgeSize / 2, badgeY + badgeSize / 2, badgeSize / 2);
 }
@@ -127,7 +127,7 @@ async function drawBrilliantBadgeImage(
 }
 
 /**
- * Draw the decorative side panel with move information
+ * REDESIGNED: Draw the decorative side panel with modern aesthetics
  */
 async function drawSidePanel(
   ctx: CanvasRenderingContext2D,
@@ -138,78 +138,154 @@ async function drawSidePanel(
   moveNotation: string,
   classification: string
 ): Promise<void> {
-  const paddingX = panelX + 40;
-  let cursorY = 60;
+  const centerX = panelX + panelWidth / 2;
+  const contentWidth = panelWidth * 0.85; // 85% of panel width
+  const paddingX = panelX + (panelWidth - contentWidth) / 2;
+  
+  // 1. Panel Background (Subtle Gradient for depth)
+  const gradient = ctx.createLinearGradient(panelX, 0, panelX + panelWidth, height);
+  gradient.addColorStop(0, '#22211F'); 
+  gradient.addColorStop(1, '#1A1918');
+  ctx.fillStyle = gradient;
+  ctx.fillRect(panelX, 0, panelWidth, height);
 
-  // Star badge
-  drawStarBadge(ctx, paddingX, cursorY - 30, 40);
+  // Separator Line
+  ctx.strokeStyle = '#302E2C';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(panelX, 0);
+  ctx.lineTo(panelX, height);
+  ctx.stroke();
 
-  // Title
-  ctx.fillStyle = '#FFFFFF';
-  ctx.font = '600 36px Arial, sans-serif';
-  ctx.fillText('Game Review', paddingX + 55, cursorY);
+  // Determine Colors based on classification
+  const accentColor = getClassificationColor(classification);
+  const textColor = '#FFFFFF';
+  const subTextColor = '#AAAAAA';
 
-  // Username text
-  cursorY += 70;
-  ctx.fillStyle = '#D0CFCC';
-  ctx.font = '600 22px Arial, sans-serif';
-  ctx.fillText(`${username.toUpperCase()} played a`, paddingX, cursorY);
+  let cursorY = height * 0.08; // Start 8% down (increased top padding)
 
-  // Classification text
-  cursorY += 50;
-  ctx.fillStyle = '#FFFFFF';
-  ctx.font = '700 44px Arial, sans-serif';
-  const classificationText = classification === 'brilliant' ? 'Brilliant Move!' : formatClassificationTitle(classification);
-  ctx.fillText(classificationText, paddingX, cursorY);
-
-  // Move card
-  cursorY += 70;
-  const cardWidth = panelWidth - 80;
-  const cardHeight = 240;
-  const cardY = cursorY;
-  ctx.fillStyle = '#1F1E1D';
-  roundRect(ctx, paddingX, cardY, cardWidth, cardHeight, 24);
-
-  // Move notation in card
-  ctx.fillStyle = classification === 'brilliant' ? '#00BFAE' : '#E5D060';
-  ctx.font = '700 100px Arial, sans-serif';
+  // 2. Game Review Header (Small pill shape)
+  ctx.save();
+  ctx.font = '700 24px "Segoe UI", Roboto, Helvetica, Arial, sans-serif';
+  const reviewText = "GAME REVIEW";
+  const textMetrics = ctx.measureText(reviewText);
+  const pillWidth = textMetrics.width + 60;
+  const pillHeight = 44;
+  
+  ctx.fillStyle = '#302E2C';
+  roundRect(ctx, centerX - pillWidth/2, cursorY, pillWidth, pillHeight, 22);
+  
+  // Star Icon in header
+  ctx.fillStyle = '#E5D060'; // Gold star
+  ctx.fillText("★", centerX - pillWidth/2 + 20, cursorY + pillHeight/2 + 9); // slight y adjust for font baseline
+  
+  ctx.fillStyle = '#CCCCCC';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.fillText(moveNotation, paddingX + cardWidth / 2, cardY + cardHeight / 2);
-  ctx.textAlign = 'start';
-  ctx.textBaseline = 'alphabetic';
+  ctx.fillText(reviewText, centerX + 15, cursorY + pillHeight/2 + 1);
+  ctx.restore();
 
-  // Add brilliant badge to the bottom-right corner of the card
+  cursorY += 120; // INCREASED GAP (was 80)
+
+  // 3. Player Info - CHANGED: Username first
+  // Username (Large, Gold/White)
+  ctx.fillStyle = '#FFFFFF';
+  // Dynamic font size based on name length
+  const nameFontSize = username.length > 12 ? 48 : 60;
+  ctx.font = `700 ${nameFontSize}px "Segoe UI", Roboto, Helvetica, Arial, sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'bottom';
+  ctx.fillText(username, centerX, cursorY);
+  
+  cursorY += 65; // INCREASED GAP (was 50)
+  
+  // CHANGED: "played a" text
+  ctx.fillStyle = subTextColor;
+  ctx.font = '600 30px "Segoe UI", Roboto, Helvetica, Arial, sans-serif';
+  ctx.fillText("played a", centerX, cursorY);
+
+  cursorY += 120; // INCREASED GAP (was 80)
+
+  // 4. Move Notation Box (The Highlight)
+  // Draw a large card for the move
+  const moveBoxHeight = 220; // INCREASED HEIGHT (was 200)
+  const moveBoxY = cursorY;
+  
+  // Glow effect for the Brilliant move
+  if (classification === 'brilliant') {
+    ctx.shadowColor = accentColor;
+    ctx.shadowBlur = 25;
+  }
+  
+  // Box Background
+  ctx.fillStyle = '#2A2927';
+  roundRect(ctx, paddingX, moveBoxY, contentWidth, moveBoxHeight, 16);
+  ctx.shadowBlur = 0; // Reset shadow
+
+  // Border for box (colored by classification)
+  ctx.strokeStyle = accentColor;
+  ctx.lineWidth = 4;
+  roundRect(ctx, paddingX, moveBoxY, contentWidth, moveBoxHeight, 16, false, true);
+
+  // Move Text
+  ctx.fillStyle = accentColor; // Make the move notation the accent color
+  ctx.font = '800 115px "Segoe UI", Roboto, Helvetica, Arial, sans-serif'; // INCREASED FONT SIZE (was 110)
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(moveNotation, centerX, moveBoxY + moveBoxHeight/2 + 5);
+
+  // Add Brilliant Icon overlapping the box corner if brilliant
   if (classification === 'brilliant') {
     const badgeSize = 80;
-    const badgeX = paddingX + cardWidth - badgeSize - 1;
-    const badgeY = cardY + cardHeight - badgeSize - 170;
-    await drawBrilliantBadgeImage(ctx, badgeX + badgeSize / 2, badgeY + badgeSize / 2, badgeSize / 2);
+    // Position at top-right of the move box, slightly floating out
+    const badgeX = paddingX + contentWidth - badgeSize/2 - 10;
+    const badgeY = moveBoxY - badgeSize/2 + 10;
+    await drawBrilliantBadgeImage(ctx, badgeX + badgeSize/2, badgeY + badgeSize/2, badgeSize/2);
   }
 
-  // Footer branding
-  ctx.fillStyle = '#E5D060';
-  ctx.font = '600 32px Arial, sans-serif';
-  ctx.fillText('Honeypot.Engine', paddingX, height - 60);
+  cursorY += moveBoxHeight + 85; // INCREASED GAP (was 60)
+
+  // 5. Classification Title
+  const title = classification === 'brilliant' ? 'BRILLIANT MOVE!!' : formatClassificationTitle(classification).toUpperCase();
+  
+  ctx.fillStyle = accentColor;
+  ctx.font = '900 58px "Segoe UI", Roboto, Helvetica, Arial, sans-serif'; // INCREASED FONT SIZE (was 56)
+  ctx.textAlign = 'center';
+  ctx.fillText(title, centerX, cursorY);
+
+  // 6. Footer / Watermark
+  const brandingY = height - 50; // INCREASED BOTTOM PADDING (was 40)
+  ctx.textAlign = 'center';
+  
+  // Draw a longer decorative line - INCREASED LENGTH
+  ctx.strokeStyle = '#3A3937';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(centerX - 60, brandingY - 50); // INCREASED from 40 to 100 (line is now 200px wide)
+  ctx.lineTo(centerX + 60, brandingY - 50);
+  ctx.stroke();
+
+  ctx.font = '600 26px "Segoe UI", Roboto, Helvetica, Arial, sans-serif'; // INCREASED FONT SIZE (was 24)
+  ctx.fillStyle = '#666666';
+  ctx.fillText('~honeypot.Engine', centerX, brandingY);
 }
 
-function drawStarBadge(
-  ctx: CanvasRenderingContext2D,
-  x: number,
-  y: number,
-  diameter: number
-): void {
-  ctx.save();
-  ctx.fillStyle = '#2AC15A';
-  ctx.beginPath();
-  ctx.arc(x + diameter / 2, y + diameter / 2, diameter / 2, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.fillStyle = '#FFFFFF';
-  ctx.font = `700 ${diameter * 0.7}px Arial, sans-serif`;
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.fillText('★', x + diameter / 2, y + diameter / 2 + 1);
-  ctx.restore();
+/**
+ * Helper to get color based on move quality
+ */
+function getClassificationColor(classification: string): string {
+  switch (classification.toLowerCase()) {
+    case 'brilliant': return '#1BACA6'; // Teal
+    case 'great': return '#5C8BB0';     // Blue
+    case 'best': 
+    case 'excellent': return '#81B64C'; // Green
+    case 'good': return '#96BC4B';      // Light Green
+    case 'book': return '#D5A47D';      // Brown
+    case 'blunder': return '#FA412D';   // Red
+    case 'mistake': return '#FFA459';   // Orange
+    case 'inaccuracy': return '#F7C045';// Yellow
+    default: return '#FFFFFF';
+  }
 }
 
 function roundRect(
@@ -218,7 +294,9 @@ function roundRect(
   y: number,
   w: number,
   h: number,
-  r: number
+  r: number,
+  fill = true,
+  stroke = false
 ): void {
   ctx.beginPath();
   ctx.moveTo(x + r, y);
@@ -230,7 +308,9 @@ function roundRect(
   ctx.quadraticCurveTo(x, y + h, x, y + h - r);
   ctx.lineTo(x, y + r);
   ctx.quadraticCurveTo(x, y, x + r, y);
-  ctx.fill();
+  
+  if (fill) ctx.fill();
+  if (stroke) ctx.stroke();
 }
 
 function formatClassificationTitle(classification: string): string {
