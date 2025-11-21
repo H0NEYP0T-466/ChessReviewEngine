@@ -1,15 +1,19 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Chessboard } from 'react-chessboard';
 import { Chess } from 'chess.js';
+import { toast } from 'react-hot-toast';
 import { EvalBar } from './EvalBar';
 import { ClassificationBadge } from './ClassificationBadge';
 import { MoveClassificationOverlay } from './MoveClassificationOverlay';
+import { createBrilliantMoveImage, downloadCanvas, sanitizeFilename } from '../utils/brilliantMoveImageGenerator';
 import type { MoveAnalysis, MoveArrow } from '../types/analysis';
 
 interface AnalysisBoardProps {
   moves: MoveAnalysis[];
   currentMoveIndex: number;
   onMoveIndexChange: (index: number) => void;
+  whitePlayer?: string;
+  blackPlayer?: string;
 }
 
 type Arrow = {
@@ -22,10 +26,13 @@ export function AnalysisBoard({
   moves,
   currentMoveIndex,
   onMoveIndexChange,
+  whitePlayer = 'Player',
+  blackPlayer = 'Player',
 }: AnalysisBoardProps) {
   const [game] = useState(new Chess());
   const [position, setPosition] = useState(game.fen());
   const [arrows, setArrows] = useState<Arrow[]>([]);
+  const [isGeneratingImage, setIsGeneratingImage] = useState(false);
 
   useEffect(() => {
     const updatePosition = () => {
@@ -99,6 +106,32 @@ export function AnalysisBoard({
 
   const handleLast = () => {
     onMoveIndexChange(moves.length - 1);
+  };
+
+  const handleDownloadBrilliantMove = async () => {
+    if (!currentMove || currentMove.classification !== 'brilliant') {
+      return;
+    }
+
+    setIsGeneratingImage(true);
+    try {
+      const playerName = currentMove.side === 'white' ? whitePlayer : blackPlayer;
+      const canvas = await createBrilliantMoveImage({
+        fen: position,
+        username: playerName,
+        moveNotation: currentMove.san,
+        uci: currentMove.uci,
+      });
+      
+      const filename = sanitizeFilename(`brilliant_move_${playerName}_${currentMove.san}.png`);
+      downloadCanvas(canvas, filename);
+      toast.success('Brilliant move image downloaded!');
+    } catch (error) {
+      console.error('Failed to generate brilliant move image:', error);
+      toast.error('Failed to generate image');
+    } finally {
+      setIsGeneratingImage(false);
+    }
   };
 
   useEffect(() => {
@@ -198,6 +231,31 @@ export function AnalysisBoard({
                 Best evaluation: {currentMove.engine.best_eval_cp > 0 ? '+' : ''}
                 {(currentMove.engine.best_eval_cp / 100).toFixed(2)}
               </div>
+            </div>
+          )}
+
+          {currentMove.classification === 'brilliant' && (
+            <div className="mt-3 pt-3 border-t border-gray-700">
+              <button
+                onClick={handleDownloadBrilliantMove}
+                disabled={isGeneratingImage}
+                className="w-full px-4 py-3 bg-[#00BFAE] hover:bg-[#00A89C] 
+                         disabled:bg-gray-600 disabled:cursor-not-allowed
+                         text-white font-semibold rounded-lg transition-colors
+                         flex items-center justify-center gap-2"
+              >
+                {isGeneratingImage ? (
+                  <>
+                    <span className="animate-spin">⏳</span>
+                    Generating Image...
+                  </>
+                ) : (
+                  <>
+                    <span>📥</span>
+                    Download Brilliant Move Image
+                  </>
+                )}
+              </button>
             </div>
           )}
         </div>
