@@ -121,6 +121,7 @@ export function AnalysisBoard({
         username: playerName,
         moveNotation: currentMove.san,
         playerSide: currentMove.side,
+        uci: currentMove.uci,
       });
       
       const filename = `brilliant_move_${playerName.replace(/\s+/g, '_')}_${currentMove.san}.png`;

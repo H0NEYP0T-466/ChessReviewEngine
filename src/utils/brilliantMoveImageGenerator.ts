@@ -10,6 +10,7 @@ export interface BrilliantMoveImageOptions {
   username: string;
   moveNotation: string;
   playerSide: 'white' | 'black';
+  uci?: string;
 }
 
 interface CanvasPosition {
@@ -24,6 +25,7 @@ export async function createBrilliantMoveImage({
   fen,
   username,
   moveNotation,
+  uci,
 }: BrilliantMoveImageOptions): Promise<HTMLCanvasElement> {
   const width = 1200;
   const height = 630;
@@ -55,17 +57,11 @@ export async function createBrilliantMoveImage({
     return canvas;
   }
 
-  // Determine destination square from FEN
+  // Determine destination square from UCI notation
   let destSquare: string | null = null;
-  try {
-    // We need to figure out which square was the destination
-    // Since we have the FEN after the move, we'll mark it later based on the last move
-    const history = chess.history({ verbose: true });
-    if (history.length > 0) {
-      destSquare = history[history.length - 1].to;
-    }
-  } catch {
-    // Ignore if we can't determine destination
+  if (uci && uci.length >= 4) {
+    // Extract destination square from UCI (e.g., "e2e4" -> "e4")
+    destSquare = uci.substring(2, 4);
   }
 
   // Draw board
