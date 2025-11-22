@@ -1,0 +1,139 @@
+name: 💡 Feature Request
+description: Propose an enhancement or new feature
+title: "[Feature]: "
+labels: ["enhancement"]
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for suggesting a new feature! Please provide as much detail as possible to help us understand and evaluate your proposal.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem Statement
+      description: What problem does this feature solve? Is your feature request related to a problem?
+      placeholder: I'm frustrated when... / It would be useful to have...
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed Solution
+      description: Describe the solution you'd like to see implemented
+      placeholder: I would like the application to support...
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives Considered
+      description: Have you considered any alternative solutions or features?
+      placeholder: I've thought about using... but...
+    validations:
+      required: false
+
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope and Impact
+      description: |
+        What would be in scope for this feature? What would be out of scope?
+        How would this impact existing functionality?
+      placeholder: |
+        In scope:
+        - Feature A
+        - Feature B
+        
+        Out of scope:
+        - Feature C
+        
+        Impact:
+        - This would affect...
+    validations:
+      required: false
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      description: How important is this feature to you?
+      options:
+        - Critical - Blocking my usage
+        - High - Very important for my use case
+        - Medium - Would be nice to have
+        - Low - Minor enhancement
+    validations:
+      required: true
+
+  - type: dropdown
+    id: category
+    attributes:
+      label: Feature Category
+      description: Which part of the application does this feature relate to?
+      options:
+        - Frontend UI/UX
+        - Backend API
+        - Chess Analysis Engine
+        - PGN Processing
+        - Move Classification
+        - Performance
+        - Documentation
+        - DevOps/Deployment
+        - Testing
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: implementation
+    attributes:
+      label: Implementation Ideas
+      description: Do you have any ideas on how this could be implemented?
+      placeholder: This could be implemented by...
+    validations:
+      required: false
+
+  - type: textarea
+    id: risks
+    attributes:
+      label: Potential Risks or Concerns
+      description: Are there any potential risks, performance concerns, or breaking changes?
+      placeholder: This might affect...
+    validations:
+      required: false
+
+  - type: textarea
+    id: examples
+    attributes:
+      label: Examples or Mockups
+      description: Provide examples, mockups, or references from other applications
+      placeholder: Similar to how chess.com does... / See attached mockup...
+    validations:
+      required: false
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional Context
+      description: Add any other context, screenshots, or information about the feature request
+      placeholder: Any additional information...
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: Pre-submission Checklist
+      description: Please confirm the following before submitting
+      options:
+        - label: I have searched for existing feature requests
+          required: true
+        - label: This feature aligns with the project's goals
+          required: false
+        - label: I am willing to help implement this feature
+          required: false
